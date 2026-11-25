@@ -3,11 +3,11 @@
 <html lang="ko">
 <head>
   <title>회원가입 | 신선마켓</title>
-  <%@ include file="/WEB-INF/jsp/common/head.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/head.jsp" %>
   <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </head>
 <body>
-  <%@ include file="/WEB-INF/jsp/common/header.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/header.jsp" %>
   <main class="container">
     <div class="auth-box wide">
       <h2 class="page-title">회원가입</h2>
@@ -39,9 +39,9 @@
         <button class="btn btn-primary btn-block" type="submit">가입하기</button>
       </form>
     </div></main>
-  <%@ include file="/WEB-INF/jsp/common/footer.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/footer.jsp" %>
 
-  <%@ include file="/WEB-INF/jsp/common/scripts.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/scripts.jsp" %>
   <script src="js/pages/signup.js"></script>
 </body>
 </html>

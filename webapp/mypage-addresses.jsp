@@ -3,11 +3,11 @@
 <html lang="ko">
 <head>
   <title>배송지 관리 | 신선마켓</title>
-  <%@ include file="/WEB-INF/jsp/common/head.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/head.jsp" %>
   <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </head>
 <body>
-  <%@ include file="/WEB-INF/jsp/common/header.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/header.jsp" %>
   <div class="mypage container"><aside id="mypage-nav" class="mypage-nav"></aside><section class="mypage-content">
     <h2 class="page-title">배송지 관리</h2>
     <div class="list-toolbar"><span class="hint">기본배송지는 주문서에 자동으로 선택됩니다.</span>
@@ -25,9 +25,9 @@
       <div class="btn-row"><button type="button" class="btn" id="cancel-btn">취소</button>
         <button class="btn btn-primary" type="submit">저장</button></div>
     </form></section></div>
-  <%@ include file="/WEB-INF/jsp/common/footer.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/footer.jsp" %>
 
-  <%@ include file="/WEB-INF/jsp/common/scripts.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/scripts.jsp" %>
   <script src="js/pages/mypage-addresses.js"></script>
 </body>
 </html>

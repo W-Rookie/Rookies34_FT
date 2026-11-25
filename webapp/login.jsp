@@ -3,10 +3,10 @@
 <html lang="ko">
 <head>
   <title>로그인 | 신선마켓</title>
-  <%@ include file="/WEB-INF/jsp/common/head.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/head.jsp" %>
 </head>
 <body>
-  <%@ include file="/WEB-INF/jsp/common/header.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/header.jsp" %>
   <main class="container">
     <div class="auth-box">
       <h2 class="page-title">로그인</h2>
@@ -18,9 +18,9 @@
       </form>
       <div class="auth-links"><a href="find-id.jsp">아이디 찾기</a> · <a href="find-pw.jsp">비밀번호 찾기</a> · <a href="signup.jsp">회원가입</a></div>
     </div></main>
-  <%@ include file="/WEB-INF/jsp/common/footer.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/footer.jsp" %>
 
-  <%@ include file="/WEB-INF/jsp/common/scripts.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/scripts.jsp" %>
   <script src="js/pages/login.js"></script>
 </body>
 </html>

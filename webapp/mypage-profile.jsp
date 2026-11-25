@@ -3,10 +3,10 @@
 <html lang="ko">
 <head>
   <title>회원 정보 관리 | 신선마켓</title>
-  <%@ include file="/WEB-INF/jsp/common/head.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/head.jsp" %>
 </head>
 <body>
-  <%@ include file="/WEB-INF/jsp/common/header.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/header.jsp" %>
   <div class="mypage container"><aside id="mypage-nav" class="mypage-nav"></aside><section class="mypage-content">
     <h2 class="page-title">회원 정보 관리</h2>
     <form id="info-form" class="form narrow">
@@ -30,9 +30,9 @@
       <input name="new_password_confirm" type="password" placeholder="새 비밀번호 확인" maxlength="20" autocomplete="new-password" required>
       <button class="btn btn-block" type="submit">비밀번호 변경</button>
     </form></section></div>
-  <%@ include file="/WEB-INF/jsp/common/footer.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/footer.jsp" %>
 
-  <%@ include file="/WEB-INF/jsp/common/scripts.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/scripts.jsp" %>
   <script src="js/pages/mypage-profile.js"></script>
 </body>
 </html>

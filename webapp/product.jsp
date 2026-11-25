@@ -3,10 +3,10 @@
 <html lang="ko">
 <head>
   <title>상품 상세 | 신선마켓</title>
-  <%@ include file="/WEB-INF/jsp/common/head.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/head.jsp" %>
 </head>
 <body>
-  <%@ include file="/WEB-INF/jsp/common/header.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/header.jsp" %>
   <main class="container">
     <section class="detail" id="product"></section>
     <nav class="detail-tabs"><a href="#tab-desc">상품설명</a><a href="#tab-review">후기 (<span id="review-count">0</span>)</a><a href="#tab-inquiry">문의</a></nav>
@@ -29,9 +29,9 @@
         <button class="btn btn-primary" type="submit">문의 등록</button>
       </form>
     </section></main>
-  <%@ include file="/WEB-INF/jsp/common/footer.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/footer.jsp" %>
 
-  <%@ include file="/WEB-INF/jsp/common/scripts.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/scripts.jsp" %>
   <script src="js/pages/product.js"></script>
 </body>
 </html>

@@ -3,10 +3,10 @@
 <html lang="ko">
 <head>
   <title>아이디 찾기 | 신선마켓</title>
-  <%@ include file="/WEB-INF/jsp/common/head.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/head.jsp" %>
 </head>
 <body data-mode="id">
-  <%@ include file="/WEB-INF/jsp/common/header.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/header.jsp" %>
   <main class="container">
     <div class="auth-box">
       <h2 class="page-title">아이디 찾기</h2>
@@ -25,9 +25,9 @@
         <p class="result" id="result"></p>
       <div class="auth-links"><a href="login.jsp">로그인</a> · <a href="find-pw.jsp">비밀번호 찾기</a></div>
     </div></main>
-  <%@ include file="/WEB-INF/jsp/common/footer.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/footer.jsp" %>
 
-  <%@ include file="/WEB-INF/jsp/common/scripts.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/scripts.jsp" %>
   <script src="js/pages/find-account.js"></script>
 </body>
 </html>

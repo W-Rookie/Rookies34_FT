@@ -3,10 +3,10 @@
 <html lang="ko">
 <head>
   <title>후기 | 신선마켓</title>
-  <%@ include file="/WEB-INF/jsp/common/head.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/head.jsp" %>
 </head>
 <body>
-  <%@ include file="/WEB-INF/jsp/common/header.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/header.jsp" %>
   <div class="mypage container"><aside id="mypage-nav" class="mypage-nav"></aside><section class="mypage-content">
     <h2 class="page-title">후기</h2>
     <div class="tabs" id="review-tabs"></div>
@@ -26,9 +26,9 @@
       <div class="btn-row"><button type="button" class="btn" id="cancel-btn">취소</button>
         <button class="btn btn-primary" type="submit">저장</button></div>
     </form></section></div>
-  <%@ include file="/WEB-INF/jsp/common/footer.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/footer.jsp" %>
 
-  <%@ include file="/WEB-INF/jsp/common/scripts.jsp" %>
+  <%@ include file="WEB-INF/jsp/common/scripts.jsp" %>
   <script src="js/pages/mypage-reviews.js"></script>
 </body>
 </html>
