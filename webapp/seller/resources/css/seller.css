@@ -1,10 +1,15 @@
+
 /* seller.css — 판매자 페이지 스타일 (왼쪽 사이드바 + 흑백/회색 톤)
- * 색상: 검정 #111 · 진회색 #333/#555 · 회색 #888/#ccc · 연회색 #f2f2f2/#f7f7f7 · 흰색 #fff
- * 사이드바는 layout.js가 <body> 맨 앞에 넣는 .seller-header를 왼쪽에 고정한 것
+ * 색상: 검정 #111 · 진회색 #333/#555 · 회색 #888/#ccc
+ * 연회색 #f2f2f2/#f7f7f7 · 흰색 #fff
+ * 사이드바는 layout.js가 body 맨 앞에 넣는 .seller-header를 왼쪽에 고정
  */
 
 /* ===== 기본 ===== */
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: "Malgun Gothic", sans-serif;
@@ -12,9 +17,20 @@ body {
   color: #111;
   background: #f7f7f7;
 }
-a { color: #111; }
-h2 { margin: 0 0 20px; font-size: 22px; }
-h3 { margin: 0 0 12px; font-size: 16px; }
+
+a {
+  color: #111;
+}
+
+h2 {
+  margin: 0 0 20px;
+  font-size: 22px;
+}
+
+h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
 
 /* ===== 왼쪽 사이드바 (layout.js가 그림) ===== */
 .seller-header {
@@ -28,13 +44,18 @@ h3 { margin: 0 0 12px; font-size: 16px; }
   background: #111;
   color: #fff;
 }
+
 .seller-header h1 {
   margin: 0;
   padding: 24px 20px;
   font-size: 18px;
   border-bottom: 1px solid #333;
 }
-.seller-header a { color: #fff; text-decoration: none; }
+
+.seller-header a {
+  color: #fff;
+  text-decoration: none;
+}
 
 .seller-header nav {
   flex: 1;
@@ -43,12 +64,18 @@ h3 { margin: 0 0 12px; font-size: 16px; }
   padding: 12px 0;
   overflow-y: auto;
 }
+
 .seller-header nav a {
   padding: 12px 20px;
   color: #ccc;
   border-left: 3px solid transparent;
 }
-.seller-header nav a:hover { background: #222; color: #fff; }
+
+.seller-header nav a:hover {
+  background: #222;
+  color: #fff;
+}
+
 .seller-header nav a.active {
   background: #333;
   color: #fff;
@@ -56,7 +83,7 @@ h3 { margin: 0 0 12px; font-size: 16px; }
   border-left-color: #fff;
 }
 
-/* 사이드바 하단: 아이디 + 로그아웃 */
+/* ===== 사이드바 하단: 아이디 + 로그아웃 ===== */
 .seller-header > div {
   padding: 16px 20px;
   border-top: 1px solid #333;
@@ -66,22 +93,28 @@ h3 { margin: 0 0 12px; font-size: 16px; }
   font-size: 13px;
   color: #ccc;
 }
+
 .seller-header > div button {
   background: #333;
   border: 1px solid #555;
   color: #fff;
 }
-.seller-header > div button:hover { background: #555; }
 
-/* 사이드바가 있는 페이지의 본문: 사이드바 폭만큼 오른쪽으로 */
+.seller-header > div button:hover {
+  background: #555;
+}
+
+/* ===== 사이드바가 있는 페이지의 본문 ===== */
 .seller-header ~ main {
   margin-left: 220px;
   padding: 30px 40px;
   min-height: 100vh;
 }
 
-/* 사이드바 없는 페이지(로그인·입점 신청) 본문 */
-main { padding: 30px 40px; }
+/* 사이드바 없는 페이지(로그인·입점 신청) */
+main {
+  padding: 30px 40px;
+}
 
 /* ===== 로그인·입점 신청 카드 ===== */
 .auth-box {
@@ -91,35 +124,115 @@ main { padding: 30px 40px; }
   background: #fff;
   border: 1px solid #ccc;
 }
-.auth-box h1 { margin: 0 0 24px; font-size: 22px; }
+
+.auth-box h1 {
+  margin: 0 0 24px;
+  font-size: 22px;
+}
+
 .auth-box h2 {
   margin: 24px 0 12px;
   padding-bottom: 6px;
   font-size: 15px;
   border-bottom: 1px solid #ccc;
 }
-.auth-box form button[type="submit"] { width: 100%; padding: 10px; margin-top: 8px; }
-.auth-box > p { color: #555; font-size: 13px; }
+
+.auth-box form button[type="submit"] {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+}
+
+.auth-box > p {
+  color: #555;
+  font-size: 13px;
+}
 
 /* ===== 폼 ===== */
-form div { margin-bottom: 12px; }
-label { display: inline-block; min-width: 110px; color: #333; }
-input[type="text"], input[type="password"], input[type="email"],
-input[type="number"], input[type="date"], select, textarea {
+form div {
+  margin-bottom: 12px;
+}
+
+label {
+  display: inline-block;
+  min-width: 110px;
+  color: #333;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="date"],
+select,
+textarea {
   padding: 7px 8px;
   border: 1px solid #ccc;
   background: #fff;
   color: #111;
   font: inherit;
 }
-input:focus, select:focus, textarea:focus { outline: none; border-color: #111; }
-textarea { width: 100%; max-width: 600px; }
-input[type="file"] { font: inherit; }
-small { color: #888; margin-left: 6px; }
-.msg { color: #555; font-size: 13px; }
 
-/* ===== 버튼 (기본: 검정 / 표 안·페이지·닫기: 흰색) ===== */
-button, .btn {
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #111;
+}
+
+textarea {
+  width: 100%;
+  max-width: 600px;
+}
+
+input[type="file"] {
+  font: inherit;
+}
+
+small {
+  color: #888;
+  margin-left: 6px;
+}
+
+.msg {
+  color: #555;
+  font-size: 13px;
+}
+
+/* ===== 판매자 입점 신청: 아이디 중복 확인 영역 ===== */
+/* 수정: 입력칸, 중복 확인 버튼, 결과 메시지 정렬 */
+.signup-id-field {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) auto;
+  column-gap: 6px;
+  row-gap: 6px;
+  align-items: center;
+}
+
+.signup-id-field label {
+  min-width: 0;
+}
+
+.signup-id-field input {
+  width: 100%;
+  min-width: 0;
+}
+
+.signup-id-field #checkIdBtn {
+  white-space: nowrap;
+}
+
+.signup-id-field #checkIdMsg {
+  grid-column: 2 / 4;
+  display: block;
+  margin: 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* ===== 버튼 (기본: 검정 / 표 안: 흰색) ===== */
+button,
+.btn {
   display: inline-block;
   padding: 7px 14px;
   border: 1px solid #111;
@@ -129,19 +242,41 @@ button, .btn {
   text-decoration: none;
   cursor: pointer;
 }
-button:hover, .btn:hover { background: #333; }
-button:disabled { background: #ccc; border-color: #ccc; color: #888; cursor: default; }
 
-table.list td button, .pager button, .closeBtn, #checkIdBtn {
+button:hover,
+.btn:hover {
+  background: #333;
+}
+
+button:disabled {
+  background: #ccc;
+  border-color: #ccc;
+  color: #888;
+  cursor: default;
+}
+
+table.list td button,
+.pager button,
+.closeBtn,
+#checkIdBtn {
   background: #fff;
   color: #111;
   border-color: #ccc;
   padding: 4px 10px;
 }
-table.list td button:hover, .pager button:hover, .closeBtn:hover, #checkIdBtn:hover {
+
+table.list td button:hover,
+.pager button:hover,
+.closeBtn:hover,
+#checkIdBtn:hover {
   background: #f2f2f2;
 }
-table.list td button:disabled { background: #f7f7f7; color: #ccc; border-color: #eee; }
+
+table.list td button:disabled {
+  background: #f7f7f7;
+  color: #ccc;
+  border-color: #eee;
+}
 
 /* ===== 필터·요약·패널 ===== */
 .filter {
@@ -154,18 +289,32 @@ table.list td button:disabled { background: #f7f7f7; color: #ccc; border-color: 
   background: #fff;
   border: 1px solid #ccc;
 }
-.filter label { min-width: auto; }
-.summary { display: flex; gap: 30px; }
+
+.filter label {
+  min-width: auto;
+}
+
+.summary {
+  display: flex;
+  gap: 30px;
+}
+
 .panel {
   margin: 20px 0;
   padding: 16px 20px;
   background: #fff;
   border: 1px solid #ccc;
 }
-.panel label { min-width: auto; margin-right: 10px; }
 
-/* 상품 폼·설정 폼은 흰 박스 안에 */
-#productForm, #settingsForm, #answerForm {
+.panel label {
+  min-width: auto;
+  margin-right: 10px;
+}
+
+/* ===== 상품 폼·설정 폼 ===== */
+#productForm,
+#settingsForm,
+#answerForm {
   padding: 24px;
   background: #fff;
   border: 1px solid #ccc;
@@ -173,19 +322,55 @@ table.list td button:disabled { background: #f7f7f7; color: #ccc; border-color: 
 }
 
 /* ===== 표 ===== */
-table.list { width: 100%; border-collapse: collapse; background: #fff; }
-table.list th, table.list td { border: 1px solid #ddd; padding: 9px 10px; text-align: center; }
-table.list th { background: #f2f2f2; color: #333; font-weight: bold; }
-table.list tbody tr:hover { background: #f7f7f7; }
-table.list td button { margin: 0 2px; }
-tr.canceled td { color: #888; text-decoration: line-through; }
+table.list {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+table.list th,
+table.list td {
+  border: 1px solid #ddd;
+  padding: 9px 10px;
+  text-align: center;
+}
+
+table.list th {
+  background: #f2f2f2;
+  color: #333;
+  font-weight: bold;
+}
+
+table.list tbody tr:hover {
+  background: #f7f7f7;
+}
+
+table.list td button {
+  margin: 0 2px;
+}
+
+tr.canceled td {
+  color: #888;
+  text-decoration: line-through;
+}
 
 /* ===== 페이지 번호 ===== */
-.pager { margin-top: 14px; text-align: center; }
-.pager button { margin: 0 2px; }
-.pager button:disabled { background: #111; color: #fff; border-color: #111; }
+.pager {
+  margin-top: 14px;
+  text-align: center;
+}
 
-/* S-11, S-12 조회 화면 */
+.pager button {
+  margin: 0 2px;
+}
+
+.pager button:disabled {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+/* ===== S-11, S-12 조회 화면 ===== */
 .demo-notice {
   padding: 12px 14px;
   border: 1px solid #d5d5d5;
@@ -194,30 +379,152 @@ tr.canceled td { color: #888; text-decoration: line-through; }
   color: #333;
   margin: 0 0 16px;
 }
-.table-scroll { overflow-x: auto; width: 100%; }
-.table-scroll .list { min-width: 730px; }
-.question-cell { max-width: 360px; text-align: left !important; overflow-wrap: anywhere; }
-.question-display { padding: 14px; background: #f7f7f7; border: 1px solid #ddd; white-space: pre-wrap; overflow-wrap: anywhere; }
-.utility-details { margin-top: 22px; padding: 15px; border: 1px solid #ddd; background: #fff; }
-.utility-details summary { cursor: pointer; font-weight: bold; }
-.utility-details .filter { margin-top: 12px; margin-bottom: 0; }
-.text-link { display: inline-block; padding: 4px 9px; border: 1px solid #ccc; text-decoration: none; }
-.text-link:hover { background: #f1f1f1; }
-#answerPanel { max-width: 840px; }
-#answerPanel form { background: #fff; border: 0; padding: 0; }
-#answerPanel .closeBtn { margin-left: 6px; }
-@media (max-width: 800px) {
-  .seller-header { width: 170px; }
-  .seller-header ~ main { margin-left: 170px; padding: 20px 16px; }
-  .seller-header nav a { padding: 11px; }
-  .seller-header h1 { padding: 20px 12px; }
+
+.table-scroll {
+  overflow-x: auto;
+  width: 100%;
 }
 
-/* 2026-11-25 데모 목록 표시 */
-.preview-flag { display: inline-block; font-size: 12px; font-weight: bold; padding: 6px 10px; margin: -8px 0 18px; color: #235c3c; border: 1px solid #c3dfce; background: #edf9f1; }
-.list-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 10px; }
-.list-meta p { margin: 0; }
-.list-meta small { font-weight: normal; }
-.subtle-btn { background: #fff; color: #222; border-color: #bbb; white-space: nowrap; }
-.subtle-btn:hover { background: #eee; }
-@media(max-width: 740px) { .list-meta { align-items: flex-start; flex-direction: column; } }
+.table-scroll .list {
+  min-width: 730px;
+}
+
+.question-cell {
+  max-width: 360px;
+  text-align: left !important;
+  overflow-wrap: anywhere;
+}
+
+.question-display {
+  padding: 14px;
+  background: #f7f7f7;
+  border: 1px solid #ddd;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.utility-details {
+  margin-top: 22px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  background: #fff;
+}
+
+.utility-details summary {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.utility-details .filter {
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+.text-link {
+  display: inline-block;
+  padding: 4px 9px;
+  border: 1px solid #ccc;
+  text-decoration: none;
+}
+
+.text-link:hover {
+  background: #f1f1f1;
+}
+
+#answerPanel {
+  max-width: 840px;
+}
+
+#answerPanel form {
+  background: #fff;
+  border: 0;
+  padding: 0;
+}
+
+#answerPanel .closeBtn {
+  margin-left: 6px;
+}
+
+/* ===== 2026-11-25 데모 목록 표시 관련 스타일 ===== */
+.preview-flag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 6px 10px;
+  margin: -8px 0 18px;
+  color: #235c3c;
+  border: 1px solid #c3dfce;
+  background: #edf9f1;
+}
+
+.list-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 10px;
+}
+
+.list-meta p {
+  margin: 0;
+}
+
+.list-meta small {
+  font-weight: normal;
+}
+
+.subtle-btn {
+  background: #fff;
+  color: #222;
+  border-color: #bbb;
+  white-space: nowrap;
+}
+
+.subtle-btn:hover {
+  background: #eee;
+}
+
+/* ===== 반응형 ===== */
+@media (max-width: 800px) {
+  .seller-header {
+    width: 170px;
+  }
+
+  .seller-header ~ main {
+    margin-left: 170px;
+    padding: 20px 16px;
+  }
+
+  .seller-header nav a {
+    padding: 11px;
+  }
+
+  .seller-header h1 {
+    padding: 20px 12px;
+  }
+}
+
+@media (max-width: 740px) {
+  .list-meta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-box {
+    padding: 24px 20px;
+  }
+
+  .signup-id-field {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .signup-id-field label {
+    grid-column: 1 / -1;
+  }
+
+  .signup-id-field #checkIdMsg {
+    grid-column: 1 / -1;
+  }
+}
