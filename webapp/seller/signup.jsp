@@ -7,63 +7,45 @@
   <title>판매자 입점 신청</title>
   <link rel="stylesheet" href="resources/css/seller.css?v=20261125-R5">
 
+
   <style>
-    /* 아이디 중복 확인 영역 */
-    .signup-id-field {
-      display: grid;
-      grid-template-columns: 136px minmax(0, 1fr);
-      column-gap: 6px;
-      row-gap: 6px;
-      align-items: center;
-    }
+  /* 아이디 영역: 일반 입력 필드와 동일하게 정렬 */
+  .signup-id-field {
+    display: block;
+  }
 
-    .signup-id-field > label {
-      min-width: 0;
-    }
+  /* 아이디 입력칸 + 중복 확인 버튼 */
+  .signup-id-field .signup-id-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    vertical-align: middle;
+  }
 
-    /* 입력칸과 버튼을 한 줄로 배치 */
-    .signup-id-field .signup-id-controls {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      min-width: 0;
-      margin: 0;
-    }
+  /* 비밀번호 입력칸과 동일한 기본 너비 */
+  .signup-id-field .signup-id-controls input[type="text"] {
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    flex: none;
+  }
 
-    .signup-id-controls input[type="text"] {
-      flex: 1 1 auto;
-      min-width: 0;
-      width: 100%;
-    }
+  /* 버튼 줄바꿈 방지 */
+  .signup-id-field #checkIdBtn {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 
-    .signup-id-controls #checkIdBtn {
-      flex-shrink: 0;
-      white-space: nowrap;
-    }
-
-    /* 안내 메시지는 반드시 아래 줄에 표시 */
-    .signup-id-field #checkIdMsg {
-      grid-column: 2;
-      display: block;
-      width: 100%;
-      margin: 0;
-      line-height: 1.5;
-      overflow-wrap: anywhere;
-    }
-
-    /* 작은 화면 대응 */
-    @media (max-width: 480px) {
-      .signup-id-field {
-        grid-template-columns: minmax(0, 1fr);
-      }
-
-      .signup-id-field > label,
-      .signup-id-field .signup-id-controls,
-      .signup-id-field #checkIdMsg {
-        grid-column: 1;
-      }
-    }
+  /* 안내 메시지는 입력칸 아래 */
+  .signup-id-field #checkIdMsg {
+    display: block;
+    margin: 6px 0 0 114px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
   </style>
+
 
   <%-- 비로그인 페이지: header.jsp를 사용하지 않음 --%>
   <script src="resources/js/seller/api.js?v=20261125-R5"></script>
