@@ -5,7 +5,7 @@
 <head>
   <meta charset="UTF-8">
   <title>판매자 입점 신청</title>
-  <link rel="stylesheet" href="resources/css/seller.css?v=20261125-R5">
+  <link rel="stylesheet" href="resources/css/seller.css?v=20261125-R6">
 
 
   <style>
@@ -26,7 +26,6 @@
   /* 비밀번호 입력칸과 동일한 기본 너비 */
   .signup-id-field .signup-id-controls input[type="text"] {
     width: auto;
-    min-width: 0;
     max-width: none;
     flex: none;
   }
