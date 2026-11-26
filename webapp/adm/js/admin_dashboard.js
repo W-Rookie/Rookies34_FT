@@ -38,8 +38,8 @@ const number = (name, label, options = {}) =>
     field(name, label, { type: "number", ...options });
 const choice = (name, label, choices, options = {}) =>
     field(name, label, { choices: choices.split(" "), ...options });
-const action = (label, method, path, fields, implemented = false) =>
-    ({ label, method, path, fields, implemented });
+const action = (label, method, path, fields, implemented = false, bodyFormat = "json") =>
+    ({ label, method, path, fields, implemented, bodyFormat });
 
 const optional = { required: false };
 const id = (name, label) => number(name, label, { min: 1, path: true });
@@ -157,11 +157,11 @@ const menus = {
         action("정산 확정·반려", "PATCH", "/settlements/{settlementId}", [
             id("settlementId", "정산 ID"),
             decision()
-        ]),
+        ], true, "text"),
         action("출금 승인·반려", "PATCH", "/withdrawals/{withdrawalId}", [
             id("withdrawalId", "출금 신청 ID"),
             decision()
-        ])
+        ], true, "text")
     ],
     coupons: [
         action("쿠폰 생성", "POST", "/coupons", [
@@ -306,7 +306,7 @@ function selectMenu(button) {
 
     actionSelect.replaceChildren();
     selectedActions.forEach(function (item, index) {
-        actionSelect.add(new Option(item.label, String(index)));
+        actionSelect.add(new Option(`${item.method} · ${item.label}`, String(index)));
     });
 
     renderForm();
@@ -592,7 +592,8 @@ function buildRequest() {
     return {
         method: selectedAction.method,
         url: path,
-        body: data
+        body: selectedAction.bodyFormat === "text" ? data.decision : data,
+        bodyFormat: selectedAction.bodyFormat
     };
 }
 
@@ -603,10 +604,11 @@ function formatRequest(request) {
     ];
 
     if (request.body !== undefined) {
+        const isText = request.bodyFormat === "text";
         lines.push(
-            "Content-Type: application/json",
+            `Content-Type: ${isText ? "text/plain" : "application/json"}`,
             "",
-            JSON.stringify(request.body, null, 2)
+            isText ? request.body : JSON.stringify(request.body, null, 2)
         );
     }
 
@@ -687,7 +689,9 @@ sendButton.addEventListener("click", async function () {
     };
 
     if (request.body !== undefined) {
-        headers["Content-Type"] = "application/json";
+        headers["Content-Type"] = request.bodyFormat === "text"
+            ? "text/plain"
+            : "application/json";
     }
 
     try {
@@ -696,7 +700,9 @@ sendButton.addEventListener("click", async function () {
             headers,
             body: request.body === undefined
                 ? undefined
-                : JSON.stringify(request.body)
+                : request.bodyFormat === "text"
+                    ? request.body
+                    : JSON.stringify(request.body)
         });
 
         const result = await response.json().catch(() => null);
@@ -718,6 +724,8 @@ sendButton.addEventListener("click", async function () {
                 result?.message ||
                 (response.status >= 500
                     ? `서버 오류가 발생했습니다. (${response.status}) 백엔드 로그를 확인해 주세요.`
+                    : response.status === 404
+                        ? "API 경로를 찾지 못했습니다. 백엔드 배포와 경로 매핑을 확인해 주세요. (404)"
                     : `요청에 실패했습니다. (${response.status})`);
             return;
         }
