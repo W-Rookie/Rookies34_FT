@@ -306,7 +306,7 @@ function selectMenu(button) {
 
     actionSelect.replaceChildren();
     selectedActions.forEach(function (item, index) {
-        actionSelect.add(new Option(`${item.method} · ${item.label}`, String(index)));
+        actionSelect.add(new Option(item.label, String(index)));
     });
 
     renderForm();
@@ -615,6 +615,13 @@ function formatRequest(request) {
     return lines.join("\n");
 }
 
+function formatResponse(request, result, status) {
+    const responseBody = result === null
+        ? "(응답 본문 없음)"
+        : JSON.stringify(result, null, 2);
+    return `${formatRequest(request)}\n\n응답 (${status})\n${responseBody}`;
+}
+
 menuButtons.forEach(function (button) {
     button.addEventListener("click", function () {
         selectMenu(button);
@@ -718,7 +725,7 @@ sendButton.addEventListener("click", async function () {
         }
 
         if (!response.ok || result?.code !== "ok") {
-            preview.textContent = JSON.stringify(result, null, 2);
+            preview.textContent = formatResponse(request, result, response.status);
             preview.hidden = false;
             message.textContent =
                 result?.message ||
@@ -732,19 +739,21 @@ sendButton.addEventListener("click", async function () {
 
         if (request.method === "GET" && LIST_VIEWS[requestedAction.path]) {
             if (!renderListResults(result, requestedAction)) {
-                preview.textContent = JSON.stringify(result, null, 2);
+                preview.textContent = formatResponse(request, result, response.status);
                 preview.hidden = false;
                 message.textContent = "조회 응답 형식이 규격서와 다릅니다.";
                 return;
             }
             message.textContent = "조회가 완료되었습니다.";
         } else {
-            preview.textContent = JSON.stringify(result, null, 2);
+            preview.textContent = formatResponse(request, result, response.status);
             preview.hidden = false;
             message.textContent = "서버 요청이 완료되었습니다.";
         }
     } catch (error) {
         if (requestVersion === queryVersion) {
+            preview.textContent = formatRequest(request);
+            preview.hidden = false;
             message.textContent = "서버에 연결할 수 없습니다.";
         }
     } finally {
