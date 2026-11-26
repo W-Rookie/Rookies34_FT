@@ -9,7 +9,7 @@
 
   function td(value) {
     const cell = document.createElement("td");
-    cell.textContent = value === null || value === undefined ? "-" : String(value);
+    cell.innerHTML = value === null || value === undefined ? "-" : String(value);
     return cell;
   }
   function renderPager(total, pageSize) {

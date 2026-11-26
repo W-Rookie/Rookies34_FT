@@ -46,7 +46,7 @@
     selectedIsMock = isMock;
     $("inquiry_id").value = String(inquiry.inquiry_id);
     $("answerPanelTitle").textContent = "문의 답변 (ID: " + inquiry.inquiry_id + ")";
-    $("selectedQuestion").textContent = inquiry.title
+    $("selectedQuestion").innerHTML = inquiry.title
       ? "[" + inquiry.title + "] " + (inquiry.content || inquiry.question || "")
       : (inquiry.question || "상품 문의 내용을 확인해 주세요.");
     $("answerMsg").textContent = "";
@@ -54,7 +54,7 @@
     $("answerLen").textContent = "0";
     const answered = inquiry.is_answered === true;
     $("existingAnswer").hidden = !answered;
-    $("existingAnswer").textContent = answered ? "등록된 답변: " + (inquiry.answer || "답변 완료") : "";
+    $("existingAnswer").innerHTML = answered ? "등록된 답변: " + (inquiry.answer || "답변 완료") : "";
     $("answer").disabled = answered;
     $("answerBtn").disabled = answered;
     $("answerPanel").hidden = false;
