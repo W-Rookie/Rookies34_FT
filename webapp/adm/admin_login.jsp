@@ -34,10 +34,6 @@
                     <button id="login-button" type="submit" disabled>로그인</button>
                     <p id="login-message" role="status"></p>
                 </form>
-
-                <p class="login-preview">
-                    <a href="admin_dashboard.jsp">대시보드 미리보기</a>
-                </p>
             </div>
         </section>
     </main>

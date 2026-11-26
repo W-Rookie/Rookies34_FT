@@ -107,6 +107,42 @@
     overflow-wrap: anywhere;
 }
 
+#admin-list-results {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid #dfe2e7;
+    border-radius: 10px;
+    background: #fff;
+}
+
+#admin-list-results h3 {
+    margin: 0 0 14px;
+    font-size: 17px;
+}
+
+#admin-list-results p { margin: 0; }
+
+.admin-list-scroll { overflow-x: auto; }
+
+#admin-list-results table {
+    width: 100%;
+    border-collapse: collapse;
+    white-space: nowrap;
+    font-size: 14px;
+}
+
+#admin-list-results th,
+#admin-list-results td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+}
+
+#admin-list-results th {
+    background: #f4f5f7;
+    font-weight: 650;
+}
+
 @media (max-width: 700px) {
     .admin-layout, #form-fields { grid-template-columns: minmax(0, 1fr); }
 }

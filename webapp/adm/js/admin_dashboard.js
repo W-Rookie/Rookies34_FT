@@ -7,6 +7,7 @@ const OPTION_LABELS = {
     SUSPENDED: "정지",
     WITHDRAWN: "탈퇴",
     PENDING: "승인 대기",
+    REQUESTED: "출금 신청",
     APPROVED: "승인 완료",
     REJECTED: "반려",
     APPROVE: "승인",
@@ -55,7 +56,7 @@ const menus = {
                 "ACTIVE SUSPENDED WITHDRAWN PENDING APPROVED REJECTED",
                 optional
             ),
-            number("page", "페이지", { ...optional, min: 1 })
+            number("page", "페이지", { ...optional, min: 1, defaultValue: 1 })
         ], true),
         action("회원 상태 변경", "PATCH", "/users/{userId}/status", [
             field("userId", "회원 ID", { path: true }),
@@ -110,15 +111,36 @@ const menus = {
             }),
             choice(
                 "status",
-                "주문 상태",
+                "주문 상품 상태",
                 "PAID SHIPPING COMPLETED CANCELED",
                 optional
             ),
             field("seller_id", "판매자 아이디", optional),
-            number("page", "페이지", { ...optional, min: 1 })
+            number("page", "페이지", { ...optional, min: 1, defaultValue: 1 })
         ], true)
     ],
     settlements: [
+        action("정산 내역 조회", "GET", "/settlements", [
+            field("seller_id", "판매자 아이디", optional),
+            choice("status", "정산 상태", "PENDING COMPLETED CANCELED", {
+                ...optional,
+                labels: {
+                    PENDING: "정산 대기",
+                    COMPLETED: "정산 완료",
+                    CANCELED: "정산 취소"
+                }
+            }),
+            field("date_from", "시작일", { ...optional, type: "date" }),
+            field("date_to", "종료일", { ...optional, type: "date" }),
+            number("page", "페이지", { ...optional, min: 1, defaultValue: 1 })
+        ], true),
+        action("출금 신청 내역 조회", "GET", "/withdrawals", [
+            field("seller_id", "판매자 아이디", optional),
+            choice("status", "처리 상태", "REQUESTED APPROVED REJECTED", optional),
+            field("date_from", "시작일", { ...optional, type: "date" }),
+            field("date_to", "종료일", { ...optional, type: "date" }),
+            number("page", "페이지", { ...optional, min: 1, defaultValue: 1 })
+        ], true),
         action(
             "수수료율 설정",
             "PATCH",
@@ -187,6 +209,54 @@ const menus = {
     ]
 };
 
+const LIST_VIEWS = {
+    "/users": {
+        key: "users",
+        columns: [
+            ["회원 ID", "user_id"],
+            ["로그인 ID", "login_id"],
+            ["이름", "name"],
+            ["구분", "role", "status"],
+            ["상태", "status", "status"],
+            ["가입일", "created_at"]
+        ]
+    },
+    "/orders": {
+        key: "orders",
+        columns: [
+            ["주문 번호", "order_id"],
+            ["주문일", "ordered_at"],
+            ["구매자 ID", "buyer_login_id"],
+            ["판매자 ID", "seller_id"],
+            ["결제 금액", "total_amount", "money"]
+        ]
+    },
+    "/settlements": {
+        key: "revenues",
+        columns: [
+            ["정산 ID", "settlement_id"],
+            ["판매자 ID", "seller_id"],
+            ["주문 상품 ID", "order_item_id"],
+            ["주문 금액", "order_amount", "money"],
+            ["수수료", "commission", "money"],
+            ["정산액", "settlement_amount", "money"],
+            ["상태", "status", "settlementStatus"],
+            ["주문일", "created_at"]
+        ]
+    },
+    "/withdrawals": {
+        key: "withdrawals",
+        columns: [
+            ["출금 신청 ID", "withdrawal_id"],
+            ["판매자 ID", "seller_id"],
+            ["출금 금액", "amount", "money"],
+            ["상태", "status", "status"],
+            ["신청일", "requested_at"],
+            ["처리일", "processed_at"]
+        ]
+    }
+};
+
 const menuButtons = document.querySelectorAll(
     "#admin-menu button[data-menu]"
 );
@@ -197,6 +267,10 @@ const fields = document.querySelector("#form-fields");
 const message = document.querySelector("#preview-message");
 const preview = document.querySelector("#request-preview");
 const previewButton = document.querySelector("#preview-button");
+const listResults = document.createElement("section");
+listResults.id = "admin-list-results";
+listResults.hidden = true;
+preview.before(listResults);
 
 const existingSendButton = document.querySelector("#send-button");
 const sendButton = existingSendButton || document.createElement("button");
@@ -217,6 +291,7 @@ if (!existingSendButton) {
 let selectedActions = [];
 let selectedAction;
 let inputs = [];
+let queryVersion = 0;
 
 function selectMenu(button) {
     menuButtons.forEach(function (menuButton) {
@@ -260,7 +335,7 @@ function createInput(spec) {
 
         spec.choices.forEach(function (value) {
             control.add(
-                new Option(OPTION_LABELS[value] ?? value, value)
+                new Option(spec.labels?.[value] ?? OPTION_LABELS[value] ?? value, value)
             );
         });
     } else if (tag === "input") {
@@ -272,6 +347,9 @@ function createInput(spec) {
             control.placeholder = "9001, 9002";
         } else if (spec.type === "stringList") {
             control.placeholder = "fresh_user01, fresh_user02";
+        }
+        if (spec.defaultValue !== undefined) {
+            control.value = String(spec.defaultValue);
         }
     }
 
@@ -297,6 +375,9 @@ function renderForm() {
     inputs = selectedAction.fields.map(createInput);
 
     sendButton.disabled = !selectedAction.implemented;
+    sendButton.textContent = selectedAction.method === "GET"
+        ? "조회"
+        : "서버에 요청";
     sendButton.style.opacity =
         selectedAction.implemented ? "1" : "0.5";
     sendButton.style.cursor =
@@ -306,6 +387,9 @@ function renderForm() {
 }
 
 function updateConditionalFields() {
+    queryVersion += 1;
+    clearListResults();
+
     for (const { spec, control, row } of inputs) {
         if (!spec.when) continue;
 
@@ -322,6 +406,84 @@ function updateConditionalFields() {
         : "백엔드 API가 아직 구현되지 않아 요청 미리보기만 가능합니다.";
 
     preview.hidden = true;
+}
+
+function clearListResults() {
+    listResults.replaceChildren();
+    listResults.hidden = true;
+}
+
+function formatListValue(value, kind) {
+    if (value === null || value === undefined || value === "") {
+        return "—";
+    }
+    if (kind === "status") {
+        return OPTION_LABELS[value] ?? String(value);
+    }
+    if (kind === "settlementStatus") {
+        return {
+            PENDING: "정산 대기",
+            COMPLETED: "정산 완료",
+            CANCELED: "정산 취소"
+        }[value] ?? String(value);
+    }
+    if (kind === "money") {
+        const amount = Number(value);
+        return Number.isFinite(amount)
+            ? `${amount.toLocaleString("ko-KR")}원`
+            : String(value);
+    }
+    return String(value);
+}
+
+function renderListResults(result, requestedAction) {
+    const view = LIST_VIEWS[requestedAction.path];
+    const items = view && result?.[view.key];
+    if (!Array.isArray(items)) {
+        return false;
+    }
+
+    clearListResults();
+    const heading = document.createElement("h3");
+    heading.textContent = `${requestedAction.label} · 현재 페이지 ${items.length}건`;
+    listResults.append(heading);
+
+    if (items.length === 0) {
+        const empty = document.createElement("p");
+        empty.textContent = "조회된 내역이 없습니다.";
+        listResults.append(empty);
+    } else {
+        const scroll = document.createElement("div");
+        scroll.className = "admin-list-scroll";
+        const table = document.createElement("table");
+        const thead = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+        const tbody = document.createElement("tbody");
+
+        for (const [label] of view.columns) {
+            const cell = document.createElement("th");
+            cell.scope = "col";
+            cell.textContent = label;
+            headerRow.append(cell);
+        }
+        thead.append(headerRow);
+
+        for (const item of items) {
+            const row = document.createElement("tr");
+            for (const [, key, kind] of view.columns) {
+                const cell = document.createElement("td");
+                cell.textContent = formatListValue(item?.[key], kind);
+                row.append(cell);
+            }
+            tbody.append(row);
+        }
+
+        table.append(thead, tbody);
+        scroll.append(table);
+        listResults.append(scroll);
+    }
+    listResults.hidden = false;
+    return true;
 }
 
 function readValue(spec, control) {
@@ -464,6 +626,8 @@ form.addEventListener("change", updateConditionalFields);
 function showPreview() {
     if (!form.reportValidity()) return;
 
+    queryVersion += 1;
+    clearListResults();
     preview.hidden = true;
 
     try {
@@ -512,8 +676,11 @@ sendButton.addEventListener("click", async function () {
     }
 
     sendButton.disabled = true;
+    clearListResults();
     preview.hidden = true;
     message.textContent = "서버에 요청 중...";
+    const requestVersion = queryVersion;
+    const requestedAction = selectedAction;
 
     const headers = {
         Authorization: `Bearer ${token}`
@@ -534,25 +701,44 @@ sendButton.addEventListener("click", async function () {
 
         const result = await response.json().catch(() => null);
 
+        if (requestVersion !== queryVersion) {
+            return;
+        }
+
         if (response.status === 401) {
             sessionStorage.removeItem("accessToken");
             window.location.replace("admin_login.jsp");
             return;
         }
 
-        preview.textContent = JSON.stringify(result, null, 2);
-        preview.hidden = false;
-
         if (!response.ok || result?.code !== "ok") {
+            preview.textContent = JSON.stringify(result, null, 2);
+            preview.hidden = false;
             message.textContent =
                 result?.message ||
-                `요청에 실패했습니다. (${response.status})`;
+                (response.status >= 500
+                    ? `서버 오류가 발생했습니다. (${response.status}) 백엔드 로그를 확인해 주세요.`
+                    : `요청에 실패했습니다. (${response.status})`);
             return;
         }
 
-        message.textContent = "서버 요청이 완료되었습니다.";
+        if (request.method === "GET" && LIST_VIEWS[requestedAction.path]) {
+            if (!renderListResults(result, requestedAction)) {
+                preview.textContent = JSON.stringify(result, null, 2);
+                preview.hidden = false;
+                message.textContent = "조회 응답 형식이 규격서와 다릅니다.";
+                return;
+            }
+            message.textContent = "조회가 완료되었습니다.";
+        } else {
+            preview.textContent = JSON.stringify(result, null, 2);
+            preview.hidden = false;
+            message.textContent = "서버 요청이 완료되었습니다.";
+        }
     } catch (error) {
-        message.textContent = "서버에 연결할 수 없습니다.";
+        if (requestVersion === queryVersion) {
+            message.textContent = "서버에 연결할 수 없습니다.";
+        }
     } finally {
         sendButton.disabled = !selectedAction.implemented;
     }
