@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="resources/css/seller.css?v=20261125-R5">
   <%-- 순서 중요: api.js(통신) → guard.js(권한 확인) → layout.js(메뉴 표시·로그아웃) --%>
   <script src="resources/js/seller/api.js?v=20261125-R5"></script>
-  <script src="resources/js/seller/guard.js?v=20261125-R5"></script>
+  <%--<script src="resources/js/seller/guard.js?v=20261125-R5"></script> --%>
   <script src="resources/js/seller/layout.js?v=20261125-R5"></script>
 </head>
 <body>
