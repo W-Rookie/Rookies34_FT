@@ -172,3 +172,5 @@ main.container { min-height: 60vh; padding-bottom: 40px; }
 .star-input label { flex-direction: row; }
 .form .radio-group label { flex-direction: row; align-items: center; gap: 4px; }
 main .narrow { margin-left: auto; margin-right: auto; }
+.form div > input:not([type="radio"]):not([type="checkbox"]),
+.form div > textarea { width: 100%; }
