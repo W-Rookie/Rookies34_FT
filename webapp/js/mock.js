@@ -2,9 +2,10 @@
 // mock.js — 백엔드 완성 전 가짜 응답 (규격서 응답 형식 그대로)
 // 장바구니·주문은 localStorage에 저장해서 페이지 이동해도 유지됨
 // 테스트 계정: 아무 아이디 / 비밀번호 (비밀번호 'wrong'이면 실패)
-// 쿠폰 코드: WELCOME2026 이면 등록 성공 / 현재 비밀번호 'wrong'이면 회원정보 수정 실패
+// 현재 비밀번호 'wrong'이면 회원정보 수정 실패
 // 인증번호: 123456 이면 성공
 // 백엔드 연결 후에는 이 파일을 HTML에서 빼도 됨
+// 11/25 협의: 마스킹·해시는 일단 평문으로 구현(조치 단계에서 적용) → 작성자·찾은 아이디도 평문
 // =====================================================
 const MOCK_PRODUCTS = [
   { product_id: 5063110, name: '[푸른농장] 유기농 시금치 200g', category_id: 907, price: 3500, discount_rate: 10, tags: ['BEST', 'SALE'], stock: 100, storage_type: 'COLD', origin: '국산' },
@@ -68,14 +69,39 @@ function cartItems() {
 
 const verifyOk = (code) => code === '123456';
 
+// 목록 10개씩 자르기 (후기·상품 문의)
+function pageOf(list, page, key) {
+  const p = Number(page) || 1;
+  return { code: 'ok', num: list.length, [key]: list.slice((p - 1) * SMALL_PAGE_SIZE, p * SMALL_PAGE_SIZE) };
+}
+
+function mockReviews() {
+  const texts = ['신선하고 맛있어요. 재구매 의사 있습니다.', '포장이 <b>꼼꼼해서</b> 좋았어요.', '양이 생각보다 많아요.', '배송이 빨랐어요.',
+    '조금 시들었지만 먹을 만해요.', '아이들이 잘 먹어요.', '가격 대비 만족합니다.', '다음에도 살게요.'];
+  return Array.from({ length: 12 }, (_, i) => ({ review_id: 312 - i, rating: 5 - (i % 3), content: texts[i % texts.length], images: [],
+    writer: `user_${String(i + 1).padStart(2, '0')}`, created_at: `2026-11-${String(25 - i).padStart(2, '0')} 1${i % 10}:00:00` }));
+}
+
+// 상품 문의: 기본 샘플 13개(상품 5063110) + 내가 쓴 문의
+function productInquiries() {
+  const base = Array.from({ length: 13 }, (_, i) => ({ inquiry_id: 500 + i, product_id: 5063110, product_name: '[푸른농장] 유기농 시금치 200g',
+    title: ['세척해서 오나요?', '유통기한 문의', '대량 구매 가능한가요?', '보관 방법 문의'][i % 4], content: '문의 내용 샘플입니다.',
+    is_secret: i % 3 === 1, is_mine: i === 0, writer: i === 0 ? 'fresh_user01' : `buyer_${String(i).padStart(2, '0')}`,
+    answer: i % 2 === 0 ? '안녕하세요, 판매자입니다. 답변 샘플입니다.' : null, is_answered: i % 2 === 0,
+    created_at: `2026-11-${String(24 - i).padStart(2, '0')} 09:00:00` }));
+  return [...store.get('mock_product_inquiries', []), ...base];
+}
+
+// 로그인이 필요한 API (장바구니 포함, U-23·U-30~33)
+const MOCK_AUTH_REQUIRED = /^\/(cart|orders|me|reviews|inquiries)(\/|$)/;
+
 // [메서드, 경로 정규식, 처리함수(쿼리, 본문, 경로매치)]
 const MOCK_ROUTES = [
   ['POST', /^\/auth\/login$/, (q, b) => (b.password === 'wrong' ? { code: 'no' } : { code: 'user', token: 'mock.jwt.token' })],
-  ['POST', /^\/auth\/logout$/, () => ({ code: 'ok' })],
   ['GET', /^\/auth\/check-id$/, (q) => ({ code: q.login_id === 'taken01' ? 'no' : 'ok' })],
   ['POST', /^\/users$/, () => ({ code: 'ok' })],
   ['POST', /^\/auth\/find-id\/(sms|email)$/, () => ({ code: 'ok' })],
-  ['POST', /^\/auth\/find-id\/(sms|email)\/verify$/, (q, b) => (verifyOk(b.verify_code) ? { code: 'ok', id: 'fresh*****01' } : { code: 'no' })],
+  ['POST', /^\/auth\/find-id\/(sms|email)\/verify$/, (q, b) => (verifyOk(b.verify_code) ? { code: 'ok', id: 'fresh_user01' } : { code: 'no' })],
   ['POST', /^\/auth\/password-reset\/(sms|email)$/, () => ({ code: 'ok' })],
   ['POST', /^\/auth\/password-reset\/(sms|email)\/verify$/, (q, b) => (verifyOk(b.verify_code) ? { code: 'ok', reset_token: 'mock.reset.token' } : { code: 'no' })],
   ['PUT', /^\/auth\/password-reset$/, () => ({ code: 'ok' })],
@@ -93,11 +119,22 @@ const MOCK_ROUTES = [
     return { code: 'ok', ...listShape(p), stock: p.stock, storage_type: p.storage_type, origin: p.origin,
       description: `${p.name}\n산지에서 바로 보내드리는 신선한 상품입니다.\n받으신 후 바로 냉장 보관해 주세요.`, detail_images: [] };
   }],
-  ['GET', /^\/products\/\d+\/reviews$/, () => ({ code: 'ok', num: 2, reviews: [
-    { review_id: 301, rating: 5, content: '신선하고 맛있어요. 재구매 의사 있습니다.', images: [], writer: 'fres*****01', created_at: '2026-11-23 14:00:00' },
-    { review_id: 302, rating: 4, content: '포장이 <b>꼼꼼해서</b> 좋았어요.', images: [], writer: 'test*****02', created_at: '2026-11-22 09:30:00' },
-  ] })],
-  ['POST', /^\/products\/\d+\/inquiries$/, () => ({ code: 'ok' })],
+  // 후기·문의 목록: 10개씩, 작성 시간순(최신 먼저) — 정렬은 서버가 고정
+  ['GET', /^\/products\/\d+\/reviews$/, (q) => pageOf(mockReviews(), q.page, 'reviews')],
+  ['GET', /^\/products\/(\d+)\/inquiries$/, (q, b, m) => {
+    const list = productInquiries().filter((i) => i.product_id === Number(m[1]))
+      .map((i) => (i.is_secret && !i.is_mine ? { ...i, content: null, answer: null } : i)); // 남의 비밀글: 제목만
+    return pageOf(list, q.page, 'inquiries');
+  }],
+  ['POST', /^\/products\/(\d+)\/inquiries$/, (q, b, m) => {
+    const p = MOCK_PRODUCTS.find((x) => x.product_id === Number(m[1]));
+    const mine = store.get('mock_product_inquiries', []);
+    mine.unshift({ inquiry_id: Date.now(), product_id: Number(m[1]), product_name: p ? p.name : '', title: b.title, content: b.content,
+      is_secret: !!b.is_secret, is_mine: true, writer: 'fresh_user01', answer: null, is_answered: false, created_at: nowStr() });
+    store.set('mock_product_inquiries', mine);
+    return { code: 'ok' };
+  }],
+  ['GET', /^\/categories$/, () => ({ code: 'ok', num: CATEGORIES.length, categories: CATEGORIES.map((c) => ({ category_id: c.id, name: c.name })) })],
 
   ['GET', /^\/cart$/, () => { const items = cartItems(); return { code: 'ok', num: items.length, items }; }],
   ['POST', /^\/cart\/items$/, (q, b) => {
@@ -121,7 +158,6 @@ const MOCK_ROUTES = [
     return { code: 'ok' };
   }],
   ['PUT', /^\/cart\/shipping-address$/, () => ({ code: 'ok' })],
-  ['POST', /^\/cart\/merge$/, () => ({ code: 'ok' })],
 
   ['POST', /^\/orders\/checkout$/, (q, b) => {
     const items = cartItems().filter((i) => b.cart_item_ids.includes(i.cart_item_id));
@@ -198,11 +234,6 @@ const MOCK_ROUTES = [
     const list = q.status ? all.filter((c) => c.status === q.status) : all;
     return { code: 'ok', num: list.length, coupons: list };
   }],
-  ['POST', /^\/me\/coupons$/, (q, b) => {
-    if (b.coupon_code !== 'WELCOME2026') return { code: 'no' };
-    store.set('mock_coupons', [{ coupon_id: 99, coupon_name: '웰컴 쿠폰 5천원', discount_type: 'AMOUNT', discount_value: 5000, min_order_amount: 30000, valid_from: '2026-11-24', valid_to: '2026-12-31', status: 'AVAILABLE' }]);
-    return { code: 'ok' };
-  }],
   ['GET', /^\/me\/points$/, (q) => {
     const all = [
       { type: 'POINT', amount: 3000, reason: '회원가입 적립', created_at: '2026-11-01 09:00:00' },
@@ -218,10 +249,7 @@ const MOCK_ROUTES = [
     const list = [MOCK_PRODUCTS[1], MOCK_PRODUCTS[5], MOCK_PRODUCTS[7]].map(listShape);
     return { code: 'ok', num: list.length, products: list };
   }],
-  ['GET', /^\/me\/product-inquiries$/, () => ({ code: 'ok', num: 2, inquiries: [
-    { inquiry_id: 11, product_id: 5063110, product_name: '[푸른농장] 유기농 시금치 200g', title: '세척해서 오나요?', is_secret: false, is_answered: true, created_at: '2026-11-21 10:00:00' },
-    { inquiry_id: 12, product_id: 5063112, product_name: '[횡성축산] 1등급 한우 등심 300g', title: '선물 포장 되나요?', is_secret: true, is_answered: false, created_at: '2026-11-23 15:00:00' },
-  ] })],
+  ['GET', /^\/me\/product-inquiries$/, (q) => pageOf(productInquiries().filter((i) => i.is_mine), q.page, 'inquiries')],
   ['GET', /^\/me\/claims$/, () => {
     const list = store.get('mock_claims', []);
     return { code: 'ok', num: list.length, claims: list };
@@ -259,12 +287,18 @@ const MOCK_ROUTES = [
     return { code: 'ok' };
   }],
   ['PUT', /^\/me\/password$/, (q, b) => ({ code: b.current_password === 'wrong' ? 'no' : 'ok' })],
-  ['GET', /^\/me\/reviews$/, () => {
-    const list = store.get('mock_reviews', []);
-    return { code: 'ok', num: list.length, reviews: list };
+  ['GET', /^\/me\/reviews$/, (q) => pageOf(store.get('mock_reviews', []), q.page, 'reviews')],
+  ['GET', /^\/me\/reviews\/writable$/, (q) => {
+    // 배송완료 주문 상품 중 아직 후기를 안 쓴 것 (주문 상품당 1회)
+    const written = store.get('mock_reviews', []).map((r) => r.order_item_id);
+    const items = store.get('mock_orders', []).filter((o) => o.status === 'DELIVERED')
+      .flatMap((o) => o.items.map((i) => ({ order_item_id: i.order_item_id, order_id: o.order_id, product_id: i.product_id, name: i.name, ordered_at: o.ordered_at })))
+      .filter((i) => !written.includes(i.order_item_id));
+    return pageOf(items, q.page, 'items');
   }],
   ['POST', /^\/reviews$/, (q, b) => {
     const list = store.get('mock_reviews', []);
+    if (list.some((r) => r.order_item_id === Number(b.order_item_id))) return { code: 'no' }; // 주문 상품당 1회
     const order = store.get('mock_orders', []).find((o) => o.items.some((i) => i.order_item_id === Number(b.order_item_id)));
     const item = order ? order.items.find((i) => i.order_item_id === Number(b.order_item_id)) : null;
     list.unshift({ review_id: Date.now(), order_item_id: Number(b.order_item_id), product_id: item ? item.product_id : null,
@@ -272,18 +306,11 @@ const MOCK_ROUTES = [
     store.set('mock_reviews', list);
     return { code: 'ok' };
   }],
-  ['PUT', /^\/reviews\/(\d+)$/, (q, b, m) => {
-    store.set('mock_reviews', store.get('mock_reviews', []).map((r) => (r.review_id === Number(m[1]) ? { ...r, rating: Number(b.rating), content: b.content } : r)));
-    return { code: 'ok' };
-  }],
-  ['DELETE', /^\/reviews\/(\d+)$/, (q, b, m) => {
-    store.set('mock_reviews', store.get('mock_reviews', []).filter((r) => r.review_id !== Number(m[1])));
-    return { code: 'ok' };
-  }],
 ];
 
 async function mockRequest(method, path, query, body) {
   await new Promise((r) => setTimeout(r, 150)); // 네트워크 지연 흉내
+  if (MOCK_AUTH_REQUIRED.test(path) && !auth.isLoggedIn()) return { __status: 401 };
   for (const [m, re, handler] of MOCK_ROUTES) {
     const match = path.match(re);
     if (m === method && match) {

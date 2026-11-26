@@ -9,8 +9,7 @@ document.getElementById('login-form').onsubmit = async (e) => {
   // [협의 필요] 로그인 실패 응답 형식이 규격서에 없음 (code: "user" / "seller"만 정의)
   if (res.code === 'user') {
     auth.setToken(res.token);
-    // 비회원 장바구니 병합 — [협의 필요] 로그인 API 내부에서 처리할지 여부
-    try { await api.mergeCart(); } catch (err) { console.error(err); }
+    // U-34 비회원 장바구니 병합은 추후 구현 예정 (지금은 장바구니가 로그인 필수라 병합할 것이 없음)
     location.href = safeRedirect(qs('redirect'));
   } else if (res.code === 'seller') {
     auth.setToken(res.token);

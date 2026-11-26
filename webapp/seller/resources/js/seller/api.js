@@ -95,13 +95,9 @@ const api = (function () {
     return data;
   }
 
-  // ---------- 로그아웃 (POST /api/auth/logout) ----------
+  // ---------- 로그아웃 ----------
+  // 11/25 백엔드 협의: 로그아웃 API 없이 토큰 삭제로 구현
   async function logout() {
-    try {
-      await request("POST", "/auth/logout", { skipAuthRedirect: true });
-    } catch (e) {
-      // 서버 실패해도 프론트에선 로그아웃 처리 진행
-    }
     clearSession();
     location.replace(LOGIN_URL);
   }
@@ -123,4 +119,4 @@ const api = (function () {
     del:    function (path, body, opt)  { return request("DELETE", path, Object.assign({ body: body }, opt)); },
     upload: function (method, path, formData, opt) { return request(method, path, Object.assign({ formData: formData }, opt)); }
   };
-})();
+})();

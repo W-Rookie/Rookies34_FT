@@ -2,7 +2,8 @@
  * withdraw.js — 출금 신청·내역
  *  S-08 POST /api/seller/withdrawals   { amount }   (1원 이상, 출금 가능액 이하 → 서버 검증)
  *  S-09 GET  /api/seller/withdrawals?page
- *       응답 { code, num, withdrawals:[{withdrawal_id, amount, status, created_at}] }
+ *       응답 { code, num, available_amount, withdrawals:[{withdrawal_id, amount, status, created_at}] }
+ *       available_amount = 수익금 정산액 합계 − 신청·승인된 출금액 (기술명세서 S-09 수정)
  *  ※ 실계좌 연동 없이 상태 기록만. 승인은 관리자(A-10)
  */
 (function () {
@@ -29,6 +30,9 @@
       const data = await api.get("/seller/withdrawals", { page: currentPage });
       const list = data.withdrawals || [];
       $("totalCount").textContent = data.num || 0;
+      // S-09 출금 가능액 함께 표시 (응답에 없으면 "-")
+      $("availableAmount").textContent = (data.available_amount === undefined || data.available_amount === null)
+        ? "-" : Number(data.available_amount).toLocaleString() + "원";
       tbody.innerHTML = "";
 
       if (list.length === 0) {
@@ -96,4 +100,4 @@
   });
 
   loadWithdrawals(1);
-})();
+})();

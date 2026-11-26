@@ -11,8 +11,10 @@
     <h2 class="page-title">후기</h2>
     <div class="tabs" id="review-tabs"></div>
     <ul id="review-list"></ul>
+    <div class="pagination" id="pagination"></div>
     <form id="review-form" class="form box" hidden>
       <h3>후기 작성: <span id="review-target"></span></h3>
+      <p class="hint">등록한 후기는 수정·삭제할 수 없습니다.</p>
       <input type="hidden" name="order_item_id">
       <div class="radio-group star-input">별점
         <label><input type="radio" name="rating" value="5"> ★5</label>

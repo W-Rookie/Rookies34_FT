@@ -9,7 +9,7 @@
   <%@ include file="WEB-INF/jsp/common/header.jsp" %>
   <main class="container">
     <section class="detail" id="product"></section>
-    <nav class="detail-tabs"><a href="#tab-desc">상품설명</a><a href="#tab-review">후기 (<span id="review-count">0</span>)</a><a href="#tab-inquiry">문의</a></nav>
+    <nav class="detail-tabs"><a href="#tab-desc">상품설명</a><a href="#tab-review">후기 (<span id="review-count">0</span>)</a><a href="#tab-inquiry">문의 (<span id="inquiry-count">0</span>)</a></nav>
     <section id="tab-desc" class="detail-section">
       <h3 class="sub-title">상품 설명</h3>
       <div class="pre-wrap" id="description"></div>
@@ -28,6 +28,8 @@
         <label class="check"><input type="checkbox" name="is_secret"> 비밀글로 문의하기</label>
         <button class="btn btn-primary" type="submit">문의 등록</button>
       </form>
+      <ul id="inquiry-list"></ul>
+      <div class="pagination" id="inquiry-pagination"></div>
     </section></main>
   <%@ include file="WEB-INF/jsp/common/footer.jsp" %>
 

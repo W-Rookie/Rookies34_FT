@@ -172,5 +172,13 @@ main.container { min-height: 60vh; padding-bottom: 40px; }
 .star-input label { flex-direction: row; }
 .form .radio-group label { flex-direction: row; align-items: center; gap: 4px; }
 main .narrow { margin-left: auto; margin-right: auto; }
+#user-name { color: #5f0080; }
+.inquiry-item { border-bottom: 1px solid #eee; }
+.inquiry-q { width: 100%; text-align: left; padding: 14px 4px; border: none; background: none; cursor: pointer; font-size: 14px; }
+.inquiry-q:disabled { cursor: default; color: #999; }
+.inquiry-q .hint { float: right; margin: 0; }
+.inquiry-a { padding: 12px 16px; background: #fafafa; font-size: 14px; }
+.inquiry-item > .hint { padding: 0 4px 12px; }
+#inquiry-list { margin-top: 20px; }
 .form div > input:not([type="radio"]):not([type="checkbox"]),
 .form div > textarea { width: 100%; }

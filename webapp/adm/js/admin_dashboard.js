@@ -80,6 +80,13 @@ const menus = {
             number("parent_id", "상위 카테고리 ID", { ...optional, min: 1 }),
             number("sort_order", "노출 순서", optional)
         ]),
+        // A-06 카테고리 수정 (기술명세서: 수정 부분 API 누락 → 추가)
+        action("카테고리 수정", "PUT", "/categories/{categoryId}", [
+            id("categoryId", "카테고리 ID"),
+            field("name", "카테고리명", { maxLength: 20 }),
+            number("parent_id", "상위 카테고리 ID", { ...optional, min: 1 }),
+            number("sort_order", "노출 순서", optional)
+        ]),
         action("베스트·세일·신상·특가 상품 지정", "PUT", "/curations", [
             choice("list_type", "목록 종류", "BEST SALE NEW BENEFIT"),
             field("product_ids", "상품 ID 목록 (쉼표로 구분)", { type: "ids" })
@@ -325,6 +332,7 @@ document.querySelector("#preview-button").disabled = false;
 const logoutButton = document.querySelector("#logout-button");
 
 logoutButton.addEventListener("click", function () {
+    // A-14 관리자 로그아웃: 11/25 협의에 따라 토큰 삭제로 구현 (로그아웃 API 추가는 어려움)
     sessionStorage.removeItem("accessToken");
     sessionStorage.removeItem("role");
     sessionStorage.removeItem("adminName");

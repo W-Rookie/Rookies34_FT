@@ -4,14 +4,16 @@
 // 여기서는 로그인 상태에 따라 메뉴 바꾸기 + 장바구니 개수 + 로그아웃만 처리
 // =====================================================
 async function renderHeader() {
-  // [협의 필요] 로그인 사용자 정보 조회 API(GET /api/me)가 규격서에 없음
-  // → 이름 표시 불가. 지금은 토큰 유무로만 로그인 상태 판단
   const loggedIn = auth.isLoggedIn();
   document.getElementById('menu-guest').hidden = loggedIn;
   document.getElementById('menu-user').hidden = !loggedIn;
+  if (!loggedIn) return; // 장바구니는 로그인 필수 (U-30) → 비로그인은 0 그대로
 
-  // 장바구니 개수 (비로그인도 조회 가능 — guest_cart_token 쿠키)
   try {
+    // U-58 내 정보 조회 → 이름 표시
+    const me = await api.getMe();
+    if (me.code === 'ok') document.getElementById('user-name').innerHTML = `${me.name}님`;
+    // U-30 장바구니 개수
     const cart = await api.getCart();
     if (cart.code === 'ok') document.getElementById('cart-count').textContent = cart.num;
   } catch (e) {
@@ -21,8 +23,7 @@ async function renderHeader() {
 
 document.getElementById('logout-btn').onclick = async (e) => {
   e.preventDefault();
-  await api.logout();
-  auth.clear();
+  auth.clear(); // 11/25 협의: 로그아웃 = 브라우저의 토큰 삭제 (서버 호출 없음)
   location.href = 'index.jsp';
 };
 

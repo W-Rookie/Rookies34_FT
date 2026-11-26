@@ -1,4 +1,4 @@
-// 마이컬리 > 쿠폰 — 상태별 탭 + 쿠폰 코드 등록
+// 마이컬리 > 쿠폰 — 상태별 탭 (쿠폰 코드 등록은 삭제: U-47, 쿠폰은 관리자만 발급)
 requireLogin();
 let status = 'AVAILABLE';
 
@@ -15,16 +15,6 @@ async function load() {
       <span class="coupon-status">${LABEL.couponStatus[c.status] || c.status}</span>
     </li>`).join('') : '<li class="empty">쿠폰이 없습니다.</li>';
 }
-
-document.getElementById('coupon-form').onsubmit = async (e) => {
-  e.preventDefault();
-  const code = e.target.coupon_code.value.trim();
-  if (!code) return;
-  if (!assertOk(await api.registerCoupon(code), '유효하지 않은 쿠폰 코드입니다.')) return;
-  alert('쿠폰이 등록되었습니다.');
-  e.target.reset();
-  load();
-};
 
 renderTabs(document.getElementById('coupon-tabs'), LABEL.couponStatus, status, (v) => { status = v; load(); });
 load();

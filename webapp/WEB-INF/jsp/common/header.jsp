@@ -2,7 +2,7 @@
 <header class="header">
   <div class="header-top container">
     <span id="menu-guest"><a href="signup.jsp">회원가입</a><a href="login.jsp">로그인</a></span>
-    <span id="menu-user" hidden><a href="mypage-orders.jsp">마이컬리</a><a href="#" id="logout-btn">로그아웃</a></span>
+    <span id="menu-user" hidden><span id="user-name"></span><a href="mypage-orders.jsp">마이컬리</a><a href="#" id="logout-btn">로그아웃</a></span>
     <a href="notice.jsp">고객센터</a>
   </div>
   <div class="header-main container">

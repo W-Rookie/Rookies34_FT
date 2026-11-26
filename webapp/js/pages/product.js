@@ -54,6 +54,12 @@ async function loadProduct() {
 }
 
 async function addToCart() {
+  // U-23 장바구니 담기는 로그인 후에만 가능 → 로그인 후 이 상품 페이지로 복귀
+  if (!auth.isLoggedIn()) {
+    alert('로그인 후 장바구니에 담을 수 있습니다.');
+    goLogin();
+    return;
+  }
   // [협의 필요] 규격서에 option_id가 있지만 상품 상세 응답에 옵션 목록이 없음
   const res = await api.addCartItem(Number(productId), qty);
   if (!assertOk(res, '장바구니에 담지 못했습니다.')) return;
@@ -73,13 +79,46 @@ async function loadReviews() {
       <p>${r.content}</p>
       <div class="review-imgs">${(r.images || []).map((src) => imgTag(src, '후기 사진')).join('')}</div>
     </li>`).join('') : '<li class="empty">아직 후기가 없습니다.</li>';
-  renderPagination(document.getElementById('review-pagination'), reviewPage, res.num, (p) => { reviewPage = p; loadReviews(); });
+  // 후기 10개씩, 작성 시간순 (정렬은 서버 고정)
+  renderPagination(document.getElementById('review-pagination'), reviewPage, res.num, (p) => { reviewPage = p; loadReviews(); }, SMALL_PAGE_SIZE);
 }
 
-// 상품 문의 작성 — [협의 필요] 상품별 문의 "목록" 조회 API가 없음
+// U-26 상품 문의 목록 — 10개씩, 작성 시간순. 남의 비밀글은 제목만 보이고 내용·답변은 서버가 비워서 줌
+let inquiryPage = 1;
+async function loadInquiries() {
+  const res = await api.getProductInquiries(productId, inquiryPage);
+  if (res.code !== 'ok') return;
+  document.getElementById('inquiry-count').textContent = res.num;
+  const list = document.getElementById('inquiry-list');
+  list.innerHTML = res.inquiries.length ? res.inquiries.map((i) => {
+    const locked = i.is_secret && i.content == null;
+    return `
+    <li class="inquiry-item">
+      <button type="button" class="inquiry-q" ${locked ? 'disabled' : ''}>
+        <span class="badge">${i.is_answered ? '답변완료' : '답변대기'}</span>
+        ${i.is_secret ? '🔒 ' : ''}${i.title}
+        <span class="hint">${i.writer} · ${i.created_at.slice(0, 10)}</span>
+      </button>
+      <div class="inquiry-a" hidden>
+        ${locked ? '' : `<p class="pre-wrap">${i.content}</p>`}
+        ${i.answer ? `<div class="answer"><b>판매자 답변</b><div class="pre-wrap">${i.answer}</div></div>` : ''}
+      </div>
+      ${locked ? '<p class="hint">비밀글입니다. 작성자만 내용을 볼 수 있습니다.</p>' : ''}
+    </li>`;
+  }).join('') : '<li class="empty">아직 문의가 없습니다.</li>';
+  renderPagination(document.getElementById('inquiry-pagination'), inquiryPage, res.num, (p) => { inquiryPage = p; loadInquiries(); }, SMALL_PAGE_SIZE);
+}
+
+// 문의 제목 누르면 내용·답변 펼치기
+document.getElementById('inquiry-list').onclick = (e) => {
+  const q = e.target.closest('.inquiry-q');
+  if (q && !q.disabled) q.nextElementSibling.hidden = !q.nextElementSibling.hidden;
+};
+
+// U-25 상품 문의 작성 → 등록 후 목록 새로고침
 document.getElementById('inquiry-form').onsubmit = async (e) => {
   e.preventDefault();
-  if (!auth.isLoggedIn()) { requireLogin(); return; }
+  if (!auth.isLoggedIn()) { goLogin(); return; }
   const f = e.target;
   const res = await api.createProductInquiry(productId, {
     title: f.elements.title.value.trim(), content: f.elements.content.value.trim(), is_secret: f.elements.is_secret.checked,
@@ -87,7 +126,10 @@ document.getElementById('inquiry-form').onsubmit = async (e) => {
   if (!assertOk(res, '문의를 등록하지 못했습니다.')) return;
   alert('문의가 등록되었습니다.');
   f.reset();
+  inquiryPage = 1;
+  loadInquiries();
 };
 
 loadProduct();
 loadReviews();
+loadInquiries();

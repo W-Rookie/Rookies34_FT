@@ -42,4 +42,4 @@ const guard = (function () {
   }
 
   return { loginId: api.getLoginId() };
-})();
+})();

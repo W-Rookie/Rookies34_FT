@@ -25,4 +25,4 @@ loginForm.addEventListener("input", function () {
 });
 
 // 폼 제출을 처리할 준비가 된 뒤 버튼을 활성화합니다.
-loginButton.disabled = false;
+loginButton.disabled = false;

@@ -12,6 +12,6 @@ async function load() {
       <td>${i.is_answered ? '<b>답변완료</b>' : '답변대기'}</td>
       <td>${i.created_at.slice(0, 10)}</td>
     </tr>`).join('') : '<tr><td colspan="4" class="empty">문의 내역이 없습니다.</td></tr>';
-  renderPagination(document.getElementById('pagination'), page, res.num, (p) => { page = p; load(); });
+  renderPagination(document.getElementById('pagination'), page, res.num, (p) => { page = p; load(); }, SMALL_PAGE_SIZE); // 10개씩, 작성 시간순
 }
 load();

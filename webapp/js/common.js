@@ -40,11 +40,14 @@ const auth = {
 };
 
 // 로그인 필요한 페이지 맨 위에서 호출
+function goLogin() {
+  const back = encodeURIComponent(location.pathname.split('/').pop() + location.search);
+  location.href = `login.jsp?redirect=${back}`;
+}
 function requireLogin() {
   if (!auth.isLoggedIn()) {
-    const back = encodeURIComponent(location.pathname.split('/').pop() + location.search);
-    location.href = `login.jsp?redirect=${back}`;
-    throw new Error('login required'); // 아래 코드 실행 중단
+    goLogin();
+    throw new Error('login required'); // 아래 코드 실행 중단 (의도된 중단)
   }
 }
 
@@ -83,10 +86,11 @@ function renderProductGrid(el, products) {
 }
 
 // 페이지네이션 — 응답의 num(총 개수)으로 계산
-// [협의 필요] 규격서에 페이지 크기(size)가 없음. 일단 20개로 가정
+// 기본 20개. 후기·상품 문의는 협의 결과 10개 (서버가 10개씩 내려줌)
 const PAGE_SIZE = 20;
-function renderPagination(el, currentPage, totalCount, onMove) {
-  const last = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+const SMALL_PAGE_SIZE = 10;
+function renderPagination(el, currentPage, totalCount, onMove, pageSize = PAGE_SIZE) {
+  const last = Math.max(1, Math.ceil(totalCount / pageSize));
   if (last === 1) { el.innerHTML = ''; return; }
   let html = '';
   for (let i = 1; i <= last; i++) {
@@ -124,7 +128,7 @@ const LABEL = {
   gender: { MALE: '남자', FEMALE: '여자', NONE: '선택안함' },
 };
 
-// [협의 필요] 카테고리 목록 조회 API가 규격서에 없음 → 임시 하드코딩
+// U-27 카테고리 목록 API가 실패하거나 비어 있을 때 쓰는 기본값 (추후 DB 연결)
 const CATEGORIES = [
   { id: 901, name: '채소' },
   { id: 902, name: '과일·견과·쌀' },

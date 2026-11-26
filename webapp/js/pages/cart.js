@@ -1,4 +1,5 @@
-// 장바구니 — 비로그인도 사용 가능 (guest_cart_token 쿠키)
+// 장바구니 — 로그인 필수 (U-30~U-33)
+requireLogin();
 let items = [];
 
 async function load() {
@@ -82,11 +83,6 @@ document.getElementById('order-btn').onclick = () => {
   const ids = checkedIds();
   if (!ids.length) return alert('주문할 상품을 선택해 주세요.');
   sessionStorage.setItem('checkout_ids', JSON.stringify(ids)); // 주문서 페이지로 전달
-  if (!auth.isLoggedIn()) {
-    alert('로그인 후 주문할 수 있습니다. 로그인하면 장바구니가 합쳐집니다.');
-    location.href = 'login.jsp?redirect=checkout.jsp';
-    return;
-  }
   location.href = 'checkout.jsp';
 };
 

@@ -9,10 +9,7 @@
   <%@ include file="WEB-INF/jsp/common/header.jsp" %>
   <div class="mypage container"><aside id="mypage-nav" class="mypage-nav"></aside><section class="mypage-content">
     <h2 class="page-title">쿠폰</h2>
-    <form id="coupon-form" class="filter">
-      <input name="coupon_code" maxlength="20" placeholder="쿠폰 코드를 입력해 주세요">
-      <button class="btn btn-primary" type="submit">쿠폰 등록</button>
-    </form>
+    <p class="hint">쿠폰은 관리자가 발급합니다.</p>
     <div class="tabs" id="coupon-tabs"></div>
     <ul id="coupon-list"></ul></section></div>
   <%@ include file="WEB-INF/jsp/common/footer.jsp" %>

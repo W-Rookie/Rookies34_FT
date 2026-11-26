@@ -7,6 +7,7 @@
 <%-- S-08 출금 신청 --%>
 <section class="panel">
   <h3>출금 신청</h3>
+  <p>출금 가능액: <strong id="availableAmount">-</strong></p>
   <form id="withdrawForm">
     <label>출금 금액(원) <input type="number" id="amount" min="1" step="1" required></label>
     <button type="submit" id="withdrawBtn">출금 신청</button>
