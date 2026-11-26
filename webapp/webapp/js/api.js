@@ -3,7 +3,7 @@
 // 백엔드 개발 완료 전: USE_MOCK = true (mock.js의 가짜 응답 사용)
 // 백엔드 연결 시: USE_MOCK = false 로만 바꾸면 됨
 // =====================================================
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 // 공통 요청 함수
 //   query: 쿼리스트링 객체, body: JSON 본문, form: FormData(multipart)
