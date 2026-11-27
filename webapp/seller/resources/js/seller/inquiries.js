@@ -6,6 +6,7 @@
  * 답변: POST /api/seller/product-inquiries/{inquiryId}/answer
  *
  * 실제 API 연동 / 더미데이터 미사용
+ * 페이지 이동: « ‹ 최대 5개 번호 › »
  */
 (function () {
   "use strict";
@@ -55,58 +56,62 @@
     const pager = $("inquiryPager");
     pager.replaceChildren();
 
-    const pages = Math.max(
-      1,
-      Math.ceil(filteredInquiries.length / PAGE_SIZE)
-    );
+    const totalPages = Math.ceil(filteredInquiries.length / PAGE_SIZE);
 
-    if (pages <= 1) return;
+    // 문의가 없거나 한 페이지뿐이라면 페이지 버튼 생략
+    if (totalPages <= 1) return;
 
+    // 현재 페이지를 중심으로 최대 5개의 페이지 번호 표시
     const start = Math.max(
       1,
-      Math.min(currentPage - 2, pages - 4)
+      Math.min(currentPage - 2, totalPages - 4)
     );
-    const end = Math.min(pages, start + 4);
+    const end = Math.min(totalPages, start + 4);
 
-    function add(label, page, disabled, active) {
+    function add(label, target, type, disabled, active, ariaLabel) {
       const button = document.createElement("button");
       button.type = "button";
       button.textContent = label;
+      button.className = type;
       button.disabled = disabled;
+      button.setAttribute("aria-label", ariaLabel);
 
       if (active) {
+        button.classList.add("active");
         button.setAttribute("aria-current", "page");
       }
 
-      button.addEventListener("click", function () {
-        renderPage(page);
-      });
+      if (!disabled) {
+        button.addEventListener("click", function () {
+          renderPage(target);
+        });
+      }
 
       pager.appendChild(button);
     }
 
-    add(
-      "이전",
-      currentPage - 1,
-      currentPage === 1,
-      false
-    );
+    const firstPage = currentPage === 1;
+    const finalPage = currentPage === totalPages;
 
-    for (let p = start; p <= end; p++) {
+    // « 처음 / ‹ 이전
+    add("«", 1, "nav-btn", firstPage, false, "첫 페이지");
+    add("‹", currentPage - 1, "nav-btn", firstPage, false, "이전 페이지");
+
+    // 1 2 3 4 5 (최대 5개)
+    for (let page = start; page <= end; page++) {
       add(
-        String(p),
-        p,
-        p === currentPage,
-        p === currentPage
+        String(page),
+        page,
+        "page-btn",
+        page === currentPage,
+        page === currentPage,
+        page + "페이지"
       );
     }
 
-    add(
-      "다음",
-      currentPage + 1,
-      currentPage === pages,
-      false
-    );
+    // › 다음 / » 마지막
+    add("›", currentPage + 1, "nav-btn", finalPage, false, "다음 페이지");
+    add("»", totalPages, "nav-btn", finalPage, false, "마지막 페이지");
   }
 
   // =====================================

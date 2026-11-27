@@ -71,5 +71,5 @@
   </form>
 </section>
 
-<script src="resources/js/seller/orders.js?v=20261125-R5"></script>
+<script src="resources/js/seller/orders.js?v=pager-design-1"></script>
 <%@ include file="include/footer.jsp" %>
