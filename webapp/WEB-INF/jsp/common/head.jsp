@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- 공통 CSS -->
-<link rel="stylesheet" href="css/common.css">
+<link rel="stylesheet" href="css/common.css?v=pager-design-2">
 
 <!-- 고객센터 드롭다운 스타일 -->
 <style>
