@@ -5,49 +5,12 @@
 <head>
   <meta charset="UTF-8">
   <title>판매자 입점 신청</title>
-  <link rel="stylesheet" href="resources/css/seller.css?v=20261125-R6">
 
+  <link rel="stylesheet"
+        href="resources/css/seller.css?v=signup-bank-1">
 
-  <style>
-  /* 아이디 영역: 일반 입력 필드와 동일하게 정렬 */
-  .signup-id-field {
-    display: block;
-  }
-
-  /* 아이디 입력칸 + 중복 확인 버튼 */
-  .signup-id-field .signup-id-controls {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin: 0;
-    vertical-align: middle;
-  }
-
-  /* 비밀번호 입력칸과 동일한 기본 너비 */
-  .signup-id-field .signup-id-controls input[type="text"] {
-    width: auto;
-    max-width: none;
-    flex: none;
-  }
-
-  /* 버튼 줄바꿈 방지 */
-  .signup-id-field #checkIdBtn {
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  /* 안내 메시지는 입력칸 아래 */
-  .signup-id-field #checkIdMsg {
-    display: block;
-    margin: 6px 0 0 114px;
-    line-height: 1.5;
-    overflow-wrap: anywhere;
-  }
-  </style>
-
-
-  <%-- 비로그인 페이지: header.jsp를 사용하지 않음 --%>
-  <script src="resources/js/seller/api.js?v=20261125-R5"></script>
+  <%-- 비로그인 페이지이므로 guard.js를 불러오지 않음 --%>
+  <script src="resources/js/seller/api.js?v=signup-bank-1"></script>
 </head>
 <body>
 
@@ -58,24 +21,18 @@
 
     <h2>계정 정보</h2>
 
-    <%-- 아이디 입력 및 중복 확인 --%>
-    <div class="signup-id-field">
+    <div>
       <label for="login_id">아이디 *</label>
-
-      <div class="signup-id-controls">
-        <input
-          type="text"
-          id="login_id"
-          name="login_id"
-          placeholder="6~16자 영문/숫자"
-          required
-        >
-        <button type="button" id="checkIdBtn">
-          중복 확인
-        </button>
-      </div>
-
-      <%-- 중복 확인 결과 메시지 --%>
+      <input
+        type="text"
+        id="login_id"
+        name="login_id"
+        placeholder="6~16자 영문/숫자"
+        required
+      >
+      <button type="button" id="checkIdBtn">
+        중복 확인
+      </button>
       <span id="checkIdMsg" class="msg"></span>
     </div>
 
@@ -91,8 +48,9 @@
     </div>
 
     <div>
-      <label for="password_confirm">비밀번호 확인 *</label>
-      <%-- 서버로 전송하지 않는 클라이언트 검증용 필드 --%>
+      <label for="password_confirm">
+        비밀번호 확인 *
+      </label>
       <input
         type="password"
         id="password_confirm"
@@ -146,7 +104,9 @@
     </div>
 
     <div>
-      <label for="business_reg_no">사업자등록번호 *</label>
+      <label for="business_reg_no">
+        사업자등록번호 *
+      </label>
       <input
         type="text"
         id="business_reg_no"
@@ -157,7 +117,9 @@
     </div>
 
     <div>
-      <label for="business_cert_file">사업자등록증 *</label>
+      <label for="business_cert_file">
+        사업자등록증 *
+      </label>
       <input
         type="file"
         id="business_cert_file"
@@ -166,6 +128,48 @@
         required
       >
       <small>jpg / png / pdf, 최대 5MB</small>
+    </div>
+
+    <%-- [추가] 정산 계좌 정보 --%>
+    <h2>정산 계좌 정보</h2>
+
+    <div>
+      <label for="bank">은행명 *</label>
+      <select id="bank" name="bank" required>
+        <option value="">은행 선택</option>
+        <option value="KB국민은행">KB국민은행</option>
+        <option value="신한은행">신한은행</option>
+        <option value="우리은행">우리은행</option>
+        <option value="하나은행">하나은행</option>
+        <option value="NH농협은행">NH농협은행</option>
+        <option value="IBK기업은행">IBK기업은행</option>
+        <option value="카카오뱅크">카카오뱅크</option>
+        <option value="토스뱅크">토스뱅크</option>
+        <option value="케이뱅크">케이뱅크</option>
+        <option value="우체국">우체국</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="account_no">계좌번호 *</label>
+      <input
+        type="text"
+        id="account_no"
+        name="account_no"
+        placeholder="숫자만 입력"
+        required
+      >
+    </div>
+
+    <div>
+      <label for="account_holder">예금주 *</label>
+      <input
+        type="text"
+        id="account_holder"
+        name="account_holder"
+        placeholder="예금주 이름"
+        required
+      >
     </div>
 
     <div>
@@ -178,6 +182,7 @@
     <button type="submit" id="submitBtn">
       입점 신청
     </button>
+
   </form>
 
   <p id="signupMsg" class="msg"></p>
@@ -188,6 +193,6 @@
   </p>
 </main>
 
-<script src="resources/js/seller/signup.js?v=20261125-R5"></script>
+<script src="resources/js/seller/signup.js?v=signup-bank-1"></script>
 </body>
 </html>
