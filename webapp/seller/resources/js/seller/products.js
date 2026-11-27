@@ -2,22 +2,19 @@
 /**
  * products.js - 판매자 상품 목록 조회 (S-11)
  *
- * GET /api/seller/products
+ * GET    /api/seller/products?status=&page=
+ * DELETE /api/seller/products/{productId}
  *
- * 기능:
- * 1. 실제 상품 목록 API 조회
- * 2. 상품 상태별 필터
- * 3. 페이지 이동
- * 4. 상품 수정 화면 이동
- *
- * 더미데이터 사용하지 않음
+ * 실제 API 사용 / 페이지당 최대 20건 기준
+ * 페이지 버튼: « ‹ 1 2 3 4 5 › »
+ * 전체 건수가 없으므로 실제 조회로 확인된 페이지만 번호로 표시합니다.
  */
-
 (function () {
+  "use strict";
 
-  const $ = function (id) {
-    return document.getElementById(id);
-  };
+  const $ = (id) => document.getElementById(id);
+  const PAGE_SIZE = 20;
+  const MAX_LAST_PAGE_SCAN = 100;
 
   const STATUS_LABEL = {
     PENDING: "검증 대기",
@@ -26,20 +23,20 @@
     HIDDEN: "숨김"
   };
 
-  const PAGE_SIZE = 20;
-
   let currentPage = 1;
+  let maxKnownPage = 1;
+  let lastPage = null;
   let loadSequence = 0;
+  let deletingProduct = false;
+  let appliedStatus = $("productStatus").value;
 
   // =====================================
-  // 1. 테이블 셀 생성
+  // 1. 셀 및 메시지
   // =====================================
 
   function td(value) {
-
     const cell = document.createElement("td");
 
-    // 실제 DB 데이터의 HTML 실행 방지
     cell.textContent =
       value === null || value === undefined
         ? "-"
@@ -48,266 +45,499 @@
     return cell;
   }
 
-  // =====================================
-  // 2. 안내 행 출력
-  // =====================================
-
-  function showMessage(text) {
-
-    const tbody = $("productTbody");
-    tbody.replaceChildren();
-
+  function showMessage(message) {
     const row = document.createElement("tr");
-    const cell = td(text);
+    const cell = td(message);
 
     cell.colSpan = 6;
-
     row.appendChild(cell);
-    tbody.appendChild(row);
+
+    $("productTbody").replaceChildren(row);
   }
 
   // =====================================
-  // 3. 페이지 버튼 생성
+  // 2. 실제 상품 목록 API 조회
   // =====================================
 
-  function renderPager(hasNext) {
+  async function fetchProducts(page) {
+    const data = await api.get(
+      "/seller/products",
+      {
+        status: appliedStatus,
+        page: page
+      }
+    );
 
+    if (
+      !data ||
+      data.code !== "ok" ||
+      !Array.isArray(data.products)
+    ) {
+      throw new Error(
+        "상품 목록 API 응답 형식 오류"
+      );
+    }
+
+    return data.products;
+  }
+
+  // =====================================
+  // 3. 페이지 번호
+  // « ‹ 1 2 3 4 5 › »
+  // =====================================
+
+  function renderPager() {
     const pager = $("productPager");
     pager.replaceChildren();
 
-    // 전체 건수가 제공되지 않으므로
-    // 현재 페이지와 확인된 다음 페이지까지만 표시
-    const end = currentPage + (hasNext ? 1 : 0);
-    const start = Math.max(1, end - 4);
+    const knownEnd =
+      lastPage === null ? maxKnownPage : lastPage;
 
-    function add(label, target, disabled, active) {
+    const start = Math.max(
+      1,
+      Math.min(currentPage - 2, knownEnd - 4)
+    );
 
+    const end = Math.min(
+      knownEnd,
+      start + 4
+    );
+
+    function add(
+      label,
+      target,
+      type,
+      disabled,
+      active,
+      title,
+      action
+    ) {
       const button = document.createElement("button");
 
       button.type = "button";
       button.textContent = label;
+      button.className = type;
       button.disabled = disabled;
 
+      button.setAttribute("aria-label", title);
+
       if (active) {
-        button.setAttribute("aria-current", "page");
+        button.classList.add("active");
+        button.setAttribute(
+          "aria-current",
+          "page"
+        );
       }
 
-      button.addEventListener("click", function () {
-        loadProducts(target);
-      });
+      if (!disabled) {
+        button.addEventListener(
+          "click",
+          action || function () {
+            loadProducts(target);
+          }
+        );
+      }
 
       pager.appendChild(button);
     }
 
-    if (currentPage === 1 && !hasNext) {
-      return;
-    }
+    const isFirst = currentPage === 1;
+    const hasNext = currentPage < knownEnd;
+
+    const isLast =
+      lastPage !== null &&
+      currentPage >= lastPage;
+
+    // 처음 페이지
+    add(
+      "«",
+      1,
+      "nav-btn",
+      isFirst,
+      false,
+      "첫 페이지"
+    );
 
     // 이전 페이지
     add(
-      "이전",
+      "‹",
       currentPage - 1,
-      currentPage === 1,
-      false
+      "nav-btn",
+      isFirst,
+      false,
+      "이전 페이지"
     );
 
     // 페이지 번호
     for (let p = start; p <= end; p++) {
-
       add(
         String(p),
         p,
+        "page-btn",
         p === currentPage,
-        p === currentPage
+        p === currentPage,
+        p + "페이지"
       );
-
     }
 
     // 다음 페이지
     add(
-      "다음",
+      "›",
       currentPage + 1,
+      "nav-btn",
       !hasNext,
-      false
+      false,
+      "다음 페이지"
     );
 
+    // 마지막 페이지
+    add(
+      "»",
+      lastPage,
+      "nav-btn",
+      isLast,
+      false,
+      "마지막 페이지",
+      function () {
+        if (lastPage !== null) {
+          loadProducts(lastPage);
+        } else {
+          findLastPage();
+        }
+      }
+    );
   }
 
   // =====================================
-  // 4. 상품 목록 조회
+  // 4. 상품 삭제 API
+  // DELETE /api/seller/products/{productId}
+  // =====================================
+
+  async function deleteProduct(product, button) {
+
+    // 중복 삭제 요청 방지
+    if (deletingProduct) {
+      return;
+    }
+
+    const id = product.product_id;
+
+    if (
+      id === null ||
+      id === undefined ||
+      id === ""
+    ) {
+      alert(
+        "상품 ID를 확인할 수 없어 삭제할 수 없습니다."
+      );
+      return;
+    }
+
+    // 삭제 확인
+    const confirmed = confirm(
+      "상품 '" +
+      String(product.name || id) +
+      "' (ID: " + id + ")을 삭제하시겠습니까?\n" +
+      "삭제 후 복구할 수 없습니다."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    deletingProduct = true;
+
+    button.disabled = true;
+    button.textContent = "삭제 중...";
+
+    try {
+
+      // =====================================
+      // 실제 상품 삭제 API 호출
+      // =====================================
+
+      const result = await api.del(
+        "/seller/products/" +
+        encodeURIComponent(id)
+      );
+
+      // HTTP 200이어도 code가 ok인지 확인
+      if (!result || result.code !== "ok") {
+        throw new Error(
+          "상품 삭제 API 응답 오류"
+        );
+      }
+
+      alert("상품이 삭제되었습니다.");
+
+      // =====================================
+      // 삭제 후 상품 목록 갱신
+      // =====================================
+
+      // 삭제로 인해 페이지 수가 변경됐을 수 있음
+      lastPage = null;
+      maxKnownPage = 1;
+
+      // 현재 페이지 다시 조회
+      // 마지막 상품이었다면 이전 페이지로 이동
+      await loadProducts(currentPage);
+
+    } catch (err) {
+
+      if (
+        err &&
+        err.message !== "UNAUTHORIZED"
+      ) {
+        console.error(
+          "상품 삭제 오류:",
+          err
+        );
+
+        if (err.status === 403) {
+          alert(
+            "이 상품을 삭제할 권한이 없습니다."
+          );
+        } else {
+          alert(
+            "상품 삭제에 실패했습니다.\n" +
+            "서버 응답과 상품 참조 내역을 확인해 주세요."
+          );
+        }
+      }
+
+      // 실패 시 버튼 복구
+      button.disabled = false;
+      button.textContent = "삭제";
+
+    } finally {
+
+      deletingProduct = false;
+
+    }
+  }
+
+  // =====================================
+  // 5. 상품 목록 화면 출력
+  // =====================================
+
+  function renderProducts(products) {
+
+    const tbody = $("productTbody");
+    tbody.replaceChildren();
+
+    // 현재 페이지 상품 수
+    $("productTotalCount").textContent =
+      String(products.length);
+
+    // 조회 결과가 없는 경우
+    if (products.length === 0) {
+      showMessage(
+        "조회된 상품이 없습니다."
+      );
+      return;
+    }
+
+    products.forEach(function (product) {
+
+      const row = document.createElement("tr");
+
+      // 상품 ID
+      row.appendChild(
+        td(product.product_id)
+      );
+
+      // 상품명
+      row.appendChild(
+        td(product.name)
+      );
+
+      // 판매가
+      const price = Number(product.price);
+
+      row.appendChild(
+        td(
+          Number.isFinite(price)
+            ? price.toLocaleString("ko-KR") + "원"
+            : "-"
+        )
+      );
+
+      // 재고
+      row.appendChild(
+        td(product.stock)
+      );
+
+      // 상품 상태
+      row.appendChild(
+        td(
+          STATUS_LABEL[product.status] ||
+          product.status
+        )
+      );
+
+      // =====================================
+      // 관리 버튼 영역
+      // =====================================
+
+      const actions = document.createElement("td");
+
+      // ① 상품 수정 버튼
+      const link = document.createElement("a");
+
+      link.href =
+        "productForm.jsp?id=" +
+        encodeURIComponent(product.product_id);
+
+      link.textContent = "수정";
+      link.className = "text-link";
+
+      actions.appendChild(link);
+
+      // =====================================
+      // ② 상품 삭제 버튼
+      // =====================================
+
+      const deleteBtn = document.createElement("button");
+
+      deleteBtn.type = "button";
+      deleteBtn.textContent = "삭제";
+      deleteBtn.className = "subtle-btn";
+
+      // 수정 버튼과 간격
+      deleteBtn.style.marginLeft = "8px";
+
+      deleteBtn.setAttribute(
+        "aria-label",
+        String(
+          product.name || product.product_id
+        ) + " 삭제"
+      );
+
+      deleteBtn.addEventListener(
+        "click",
+        function () {
+          deleteProduct(
+            product,
+            deleteBtn
+          );
+        }
+      );
+
+      actions.appendChild(deleteBtn);
+
+      row.appendChild(actions);
+      tbody.appendChild(row);
+
+    });
+  }
+
+  // =====================================
+  // 6. 현재 페이지 및 다음 페이지 확인
   // =====================================
 
   async function loadProducts(page) {
 
-    currentPage = page || 1;
-
-    // 이전 요청이 나중에 도착하는 경우 방지
     const sequence = ++loadSequence;
 
-    showMessage("상품 목록을 불러오는 중...");
+    currentPage = Math.max(
+      1,
+      Number(page) || 1
+    );
+
+    showMessage(
+      "상품 목록을 불러오는 중..."
+    );
+
     $("productPager").replaceChildren();
 
     try {
 
-      // 상태 필터 및 페이지
-      const query = {
-        status: $("productStatus").value,
-        page: currentPage
-      };
-
-      // =====================================
-      // 실제 상품 목록 API 호출
-      // =====================================
-
-      const result = await api.get(
-        "/seller/products",
-        query
-      );
+      const products =
+        await fetchProducts(currentPage);
 
       if (sequence !== loadSequence) {
         return;
       }
 
-      // API 응답 확인
+      // =====================================
+      // 마지막 페이지가 비었다면
+      // 이전 페이지로 이동
+      // =====================================
+
       if (
-        !result ||
-        result.code !== "ok" ||
-        !Array.isArray(result.products)
+        products.length === 0 &&
+        currentPage > 1
       ) {
-        throw new Error("상품 목록 API 응답 오류");
-      }
+        lastPage = currentPage - 1;
+        maxKnownPage = lastPage;
 
-      const products = result.products;
-
-      // 현재 페이지에서 조회된 상품 수
-      $("productTotalCount").textContent =
-        String(products.length);
-
-      const tbody = $("productTbody");
-      tbody.replaceChildren();
-
-      // =====================================
-      // 조회 결과 없음
-      // =====================================
-
-      if (products.length === 0) {
-
-        showMessage("조회된 상품이 없습니다.");
-
-        renderPager(false);
-
+        await loadProducts(lastPage);
         return;
       }
 
-      // =====================================
       // 상품 목록 출력
-      // =====================================
+      renderProducts(products);
 
-      products.forEach(function (product) {
-
-        const tr = document.createElement("tr");
-
-        // 상품 ID
-        tr.appendChild(
-          td(product.product_id)
-        );
-
-        // 상품명
-        tr.appendChild(
-          td(product.name)
-        );
-
-        // 판매가
-        const price = Number(product.price || 0);
-
-        tr.appendChild(
-          td(price.toLocaleString("ko-KR") + "원")
-        );
-
-        // 재고
-        tr.appendChild(
-          td(product.stock)
-        );
-
-        // 상품 상태
-        tr.appendChild(
-          td(
-            STATUS_LABEL[product.status] ||
-            product.status
-          )
-        );
-
-        // =====================================
-        // 상품 수정 버튼
-        // =====================================
-
-        const actions = document.createElement("td");
-
-        const link = document.createElement("a");
-
-        const id = encodeURIComponent(
-          product.product_id
-        );
-
-        link.href = "productForm.jsp?id=" + id;
-
-        link.textContent = "수정";
-        link.className = "text-link";
-
-        actions.appendChild(link);
-        tr.appendChild(actions);
-
-        tbody.appendChild(tr);
-
-      });
+      maxKnownPage = Math.max(
+        maxKnownPage,
+        currentPage
+      );
 
       // =====================================
-      // 5. 다음 페이지 존재 여부 확인
+      // 다음 페이지 존재 여부 확인
       // =====================================
 
-      let hasNext = false;
+      if (products.length < PAGE_SIZE) {
 
-      // 백엔드 num은 현재 페이지 상품 수이므로
-      // 전체 페이지 수를 계산할 수 없음
-      // 20건이 조회된 경우에만 다음 페이지를 확인
-      if (products.length === PAGE_SIZE) {
+        lastPage = currentPage;
+        maxKnownPage = currentPage;
+
+      } else if (lastPage === null) {
 
         try {
 
-          const nextResult = await api.get(
-            "/seller/products",
-            {
-              status: $("productStatus").value,
-              page: currentPage + 1
-            }
-          );
+          const nextProducts =
+            await fetchProducts(
+              currentPage + 1
+            );
 
           if (sequence !== loadSequence) {
             return;
           }
 
-          hasNext =
-            nextResult &&
-            nextResult.code === "ok" &&
-            Array.isArray(nextResult.products) &&
-            nextResult.products.length > 0;
+          if (nextProducts.length > 0) {
 
-        } catch (nextErr) {
+            maxKnownPage = Math.max(
+              maxKnownPage,
+              currentPage + 1
+            );
+
+          } else {
+
+            lastPage = currentPage;
+            maxKnownPage = currentPage;
+
+          }
+
+        } catch (probeError) {
+
+          if (sequence !== loadSequence) {
+            return;
+          }
 
           console.warn(
-            "다음 페이지 확인 실패:",
-            nextErr
+            "다음 상품 페이지 확인 실패:",
+            probeError
           );
 
         }
-
       }
 
       if (sequence !== loadSequence) {
         return;
       }
 
-      renderPager(hasNext);
+      renderPager();
 
     } catch (err) {
 
@@ -315,8 +545,10 @@
         return;
       }
 
-      // 인증 오류
-      if (err.message === "UNAUTHORIZED") {
+      if (
+        err &&
+        err.message === "UNAUTHORIZED"
+      ) {
         return;
       }
 
@@ -328,46 +560,132 @@
       $("productTotalCount").textContent = "0";
 
       showMessage(
-        "상품 목록을 불러오지 못했습니다. " +
-        (err.message || "")
+        "상품 목록을 불러오지 못했습니다."
       );
 
       $("productPager").replaceChildren();
 
     }
-
   }
 
   // =====================================
-  // 6. 샘플 초기화 버튼 비활성화
+  // 7. 마지막 페이지 찾기
   // =====================================
 
+  async function findLastPage() {
+
+    if (lastPage !== null) {
+      await loadProducts(lastPage);
+      return;
+    }
+
+    const sequence = ++loadSequence;
+    const originalPage = currentPage;
+    const startPage = maxKnownPage;
+
+    $("productPager")
+      .querySelectorAll("button")
+      .forEach(function (button) {
+        button.disabled = true;
+      });
+
+    try {
+
+      for (
+        let p = startPage;
+        p < startPage + MAX_LAST_PAGE_SCAN;
+        p++
+      ) {
+
+        const products =
+          await fetchProducts(p);
+
+        if (sequence !== loadSequence) {
+          return;
+        }
+
+        if (products.length < PAGE_SIZE) {
+
+          lastPage =
+            products.length === 0 && p > 1
+              ? p - 1
+              : p;
+
+          maxKnownPage = lastPage;
+
+          await loadProducts(lastPage);
+          return;
+        }
+
+        maxKnownPage = Math.max(
+          maxKnownPage,
+          p
+        );
+      }
+
+      throw new Error(
+        "마지막 페이지 확인 한도 초과"
+      );
+
+    } catch (err) {
+
+      if (sequence !== loadSequence) {
+        return;
+      }
+
+      if (
+        err &&
+        err.message === "UNAUTHORIZED"
+      ) {
+        return;
+      }
+
+      console.error(
+        "마지막 상품 페이지 확인 실패:",
+        err
+      );
+
+      alert(
+        "마지막 페이지를 확인하지 못했습니다.\n" +
+        "이전/다음으로 이동해 주세요."
+      );
+
+      await loadProducts(originalPage);
+
+    }
+  }
+
+  // =====================================
+  // 8. 상태 필터 및 최초 조회
+  // =====================================
+
+  // 기존 샘플 버튼이 남아 있으면 숨기기
   const resetMockBtn = $("productResetMock");
 
   if (resetMockBtn) {
     resetMockBtn.hidden = true;
   }
 
-  // =====================================
-  // 7. 상태별 검색
-  // =====================================
-
+  // 상태별 필터
   $("productFilterForm").addEventListener(
     "submit",
     function (e) {
 
       e.preventDefault();
 
-      // 필터 변경 시 첫 페이지부터 조회
+      appliedStatus =
+        $("productStatus").value;
+
+      // 필터 변경 시 페이지 상태 초기화
+      maxKnownPage = 1;
+      lastPage = null;
+
       loadProducts(1);
 
     }
   );
 
-  // =====================================
-  // 8. 최초 상품 목록 조회
-  // =====================================
-
+  // 최초 목록 조회
   loadProducts(1);
 
 })();
