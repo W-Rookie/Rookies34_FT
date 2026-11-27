@@ -208,7 +208,6 @@ small {
 }
 
 /* 사용 가능한 아이디: 초록색 */
-/* signup.js에서 success 클래스를 지정한 경우 적용 */
 .signup-id-field #checkIdMsg.success {
   color: #15803d !important;
 }
@@ -244,7 +243,6 @@ button:disabled {
 }
 
 table.list td button,
-.pager button,
 .closeBtn,
 #checkIdBtn {
   background: #fff;
@@ -254,7 +252,6 @@ table.list td button,
 }
 
 table.list td button:hover,
-.pager button:hover,
 .closeBtn:hover,
 #checkIdBtn:hover {
   background: #f2f2f2;
@@ -342,21 +339,142 @@ tr.canceled td {
   text-decoration: line-through;
 }
 
-/* ===== 페이지 번호 ===== */
+/* =====================================
+   페이지네이션 - 공통 스타일
+   상품 관리 / 상품 문의 / 수익금 내역
+
+   참고 이미지:
+   «  ‹  1  2  3  4  5  ›  »
+===================================== */
+
+/* 페이지 번호 전체 영역 */
 .pager {
-  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+
+  width: 100%;
+  margin: 26px 0 24px;
+  padding: 0;
+
   text-align: center;
 }
 
+/* 모든 페이지 버튼 공통 */
 .pager button {
-  margin: 0 2px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  flex: 0 0 auto;
+
+  min-width: 42px;
+  height: 42px;
+  margin: 0;
+  padding: 0 8px;
+
+  border: none;
+  border-radius: 50%;
+
+  background: transparent;
+  color: #999;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 1;
+
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
-.pager button:disabled {
-  background: #111;
-  color: #fff;
-  border-color: #111;
+/* 일반 페이지 번호에 마우스를 올렸을 때 */
+.pager button:not(:disabled):hover {
+  background: #ebebeb;
+  color: #333;
 }
+
+/* 선택된 현재 페이지 번호 */
+.pager button.page-btn.active,
+.pager button.active,
+.pager button[aria-current="page"],
+.pager button.page-btn.active:disabled,
+.pager button.active:disabled,
+.pager button[aria-current="page"]:disabled {
+  min-width: 44px;
+  width: 44px;
+  height: 44px;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #b8b8b8;
+  color: #fff;
+
+  font-weight: bold;
+  opacity: 1;
+  cursor: default;
+}
+
+/* 현재 페이지는 마우스 오버 시에도 모양 유지 */
+.pager button[aria-current="page"]:hover,
+.pager button.active:hover {
+  background: #b8b8b8;
+  color: #fff;
+}
+
+/* 처음/이전/다음/마지막 이동 버튼 */
+.pager button.nav-btn {
+  min-width: 28px;
+  width: 28px;
+  height: 42px;
+
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+
+  background: transparent;
+  color: #aaa;
+
+  font-size: 20px;
+  font-weight: normal;
+}
+
+/* 이동 버튼 마우스 오버 */
+.pager button.nav-btn:not(:disabled):hover {
+  background: transparent;
+  color: #333;
+}
+
+/* 비활성화된 버튼 */
+.pager button:disabled:not([aria-current="page"]):not(.active) {
+  background: transparent;
+  border: none;
+  color: #ccc;
+
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* 비활성화된 이동 버튼 */
+.pager button.nav-btn:disabled {
+  background: transparent;
+  color: #ccc;
+  opacity: 0.5;
+}
+
+/* 키보드 접근성 */
+.pager button:focus-visible {
+  outline: 2px solid #555;
+  outline-offset: 3px;
+}
+
+/* =====================================
+   페이지네이션 스타일 끝
+===================================== */
 
 /* ===== S-11, S-12 조회 화면 ===== */
 .demo-notice {
@@ -497,6 +615,24 @@ tr.canceled td {
     align-items: flex-start;
     flex-direction: column;
   }
+
+  .pager {
+    gap: 8px;
+  }
+
+  .pager button {
+    min-width: 36px;
+    height: 36px;
+    font-size: 13px;
+  }
+
+  .pager button.page-btn.active,
+  .pager button.active,
+  .pager button[aria-current="page"] {
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -507,5 +643,30 @@ tr.canceled td {
   .list-meta {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .pager {
+    gap: 4px;
+  }
+
+  .pager button {
+    min-width: 32px;
+    height: 34px;
+    padding: 0 4px;
+    font-size: 12px;
+  }
+
+  .pager button.page-btn.active,
+  .pager button.active,
+  .pager button[aria-current="page"] {
+    min-width: 36px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .pager button.nav-btn {
+    min-width: 24px;
+    width: 24px;
+    font-size: 17px;
   }
 }

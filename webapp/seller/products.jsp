@@ -81,6 +81,6 @@
 <!-- =====================================
      5. 실제 상품 목록 API 연동
 ===================================== -->
-<script src="resources/js/seller/products.js?v=real-api-2"></script>
+<script src="resources/js/seller/products.js?v=pager-design-1"></script>
 
 <%@ include file="include/footer.jsp" %>
