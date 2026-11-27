@@ -157,11 +157,11 @@ const menus = {
         action("정산 확정·반려", "PATCH", "/settlements/{settlementId}", [
             id("settlementId", "정산 ID"),
             decision()
-        ], true, "text"),
+        ], true),
         action("출금 승인·반려", "PATCH", "/withdrawals/{withdrawalId}", [
             id("withdrawalId", "출금 신청 ID"),
             decision()
-        ], true, "text")
+        ], true)
     ],
     coupons: [
         action("쿠폰 생성", "POST", "/coupons", [
@@ -191,7 +191,7 @@ const menus = {
                 type: "textarea",
                 maxLength: 2000
             })
-        ])
+        ], true)
     ],
     posts: [
         action("공지사항·FAQ 작성", "POST", "/posts", [
@@ -205,7 +205,7 @@ const menus = {
                 { when: ["board_type", "FAQ"] }
             ),
             field("is_pinned", "상단 고정", { type: "checkbox" })
-        ])
+        ], true)
     ]
 };
 
@@ -731,6 +731,8 @@ sendButton.addEventListener("click", async function () {
                 result?.message ||
                 (response.status >= 500
                     ? `서버 오류가 발생했습니다. (${response.status}) 백엔드 로그를 확인해 주세요.`
+                    : response.status === 403
+                        ? "관리자 권한이 없습니다. (403)"
                     : response.status === 404
                         ? "API 경로를 찾지 못했습니다. 백엔드 배포와 경로 매핑을 확인해 주세요. (404)"
                     : `요청에 실패했습니다. (${response.status})`);
@@ -748,7 +750,11 @@ sendButton.addEventListener("click", async function () {
         } else {
             preview.textContent = formatResponse(request, result, response.status);
             preview.hidden = false;
-            message.textContent = "서버 요청이 완료되었습니다.";
+            message.textContent = requestedAction.path === "/coupons"
+                ? "쿠폰이 생성되었습니다. 발급하려면 쿠폰 ID를 확인해 주세요."
+                : requestedAction.path === "/coupons/{coupon_id}"
+                    ? "쿠폰 발급이 완료되었습니다."
+                    : "서버 요청이 완료되었습니다.";
         }
     } catch (error) {
         if (requestVersion === queryVersion) {
