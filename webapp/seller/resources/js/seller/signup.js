@@ -2,11 +2,11 @@
 /**
  * signup.js - 판매자 입점 신청
  *
- * U-03 GET  /api/auth/check-id?id=...
+ * U-03 GET  /api/auth/check-id?login_id=...
  * U-05 POST /api/sellers
  *
  * U-05 전송 방식: multipart/form-data
- * 사업자등록증: Base64 문자열 + 파일명
+ * 사업자등록증: Base64 변환 없이 원본 파일 전송
  */
 
 (function () {
@@ -33,6 +33,7 @@
   function setCheckMessage(text, type = "") {
 
     checkIdMsg.textContent = text;
+
     checkIdMsg.className = type
       ? "msg " + type
       : "msg";
@@ -98,7 +99,7 @@
 
     try {
 
-      // 백엔드 @RequestParam String id 기준
+      // 기술명세서 및 확인된 요청 파라미터 기준
       const data = await api.get(
         "/auth/check-id",
         { login_id: loginId },
@@ -118,6 +119,16 @@
         setCheckMessage(
           "사용 가능한 아이디입니다.",
           "success"
+        );
+
+      } else if (data && data.code === "no") {
+
+        // 중복된 아이디
+        checkedId = null;
+
+        setCheckMessage(
+          "이미 사용 중인 아이디입니다.",
+          "error"
         );
 
       } else {
@@ -140,12 +151,8 @@
         return;
       }
 
-      // 서버가 HTTP 200 + code:no 반환
-      if (
-        err.status === 200 &&
-        err.data &&
-        err.data.code === "no"
-      ) {
+      // API 오류 객체에 중복 응답이 포함된 경우
+      if (err.data && err.data.code === "no") {
 
         setCheckMessage(
           "이미 사용 중인 아이디입니다.",
@@ -154,13 +161,16 @@
 
       } else {
 
-        // 네트워크 오류, 404, 500 등
+        // 네트워크 오류, 400, 404, 500 등
         setCheckMessage(
           "중복 확인 요청에 실패했습니다.",
           "error"
         );
 
-        console.error("아이디 중복 확인 오류:", err);
+        console.error(
+          "아이디 중복 확인 오류:",
+          err
+        );
 
       }
 
@@ -300,40 +310,7 @@
   }
 
   // =====================================
-  // 7. 사업자등록증 Base64 변환
-  // =====================================
-
-  function fileToBase64(file) {
-
-    return new Promise(function (resolve, reject) {
-
-      const reader = new FileReader();
-
-      reader.onload = function () {
-
-        const result = String(reader.result || "");
-        const commaIndex = result.indexOf(",");
-
-        if (commaIndex === -1) {
-          reject(new Error("파일 변환 실패"));
-          return;
-        }
-
-        resolve(result.substring(commaIndex + 1));
-
-      };
-
-      reader.onerror = function () {
-        reject(new Error("파일 읽기 실패"));
-      };
-
-      reader.readAsDataURL(file);
-
-    });
-  }
-
-  // =====================================
-  // 8. 입점 신청 API 호출
+  // 7. 입점 신청 API 호출
   // =====================================
 
   form.addEventListener("submit", async function (e) {
@@ -354,12 +331,10 @@
 
     try {
 
+      // [수정] 사업자등록증 원본 파일
       const file = $("business_cert_file").files[0];
 
-      // 사업자등록증 Base64 변환
-      const base64 = await fileToBase64(file);
-
-      // multipart/form-data
+      // multipart/form-data 생성
       const fd = new FormData(form);
 
       // 계정 정보
@@ -368,18 +343,24 @@
         $("login_id").value.trim()
       );
 
-      // 사업자등록증
+      // =====================================
+      // [핵심 수정] 사업자등록증 파일 전송
+      // =====================================
+
+      // Base64 변환 없이 실제 파일 객체 전송
       fd.set(
         "business_cert_file",
-        base64
-      );
-
-      fd.set(
-        "business_cert_file_name",
+        file,
         file.name
       );
 
+      // Base64 방식에서 사용했던 파일명 필드 제거
+      fd.delete("business_cert_file_name");
+
+      // =====================================
       // 정산 계좌 정보
+      // =====================================
+
       fd.set(
         "bank",
         $("bank").value
@@ -398,7 +379,10 @@
       // 판매자 약관 동의
       fd.set("agree_terms", "true");
 
-      // U-05 입점 신청
+      // =====================================
+      // U-05 입점 신청 API
+      // =====================================
+
       const result = await api.upload(
         "POST",
         "/sellers",
@@ -420,7 +404,10 @@
 
     } catch (err) {
 
-      console.error("입점 신청 오류:", err);
+      console.error(
+        "입점 신청 오류:",
+        err
+      );
 
       msg.textContent =
         "입점 신청에 실패했습니다. " +
