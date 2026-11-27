@@ -87,25 +87,24 @@
 
 #action-select { max-width: 360px; }
 
-#preview-button {
+#send-button {
     margin-top: 16px;
     padding: 10px 14px;
     border: 0;
     border-radius: 7px;
-    background: #2b313b;
+    background: #663399;
     color: #fff;
     font: inherit;
     cursor: pointer;
 }
 
-#request-preview {
-    padding: 16px;
-    border-radius: 8px;
-    background: #20242b;
-    color: #edf1f7;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-}
+#send-button:hover:not(:disabled) { background: #53287f; }
+#send-button:disabled { opacity: 0.5; cursor: not-allowed; }
+#send-button:focus-visible { outline: 3px solid #c9a8e5; outline-offset: 2px; }
+
+#admin-message:empty { display: none; }
+#admin-message[data-state="error"] { color: #b42318; }
+#admin-message[data-state="success"] { color: #2d6438; }
 
 #admin-list-results {
     margin-top: 20px;
@@ -226,33 +225,12 @@
     margin-top: 16px;
 }
 
-.admin-product-gallery {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 16px;
-}
-
-.admin-product-gallery img {
-    width: 160px;
-    height: 160px;
-    border: 1px solid #dfe2e7;
-    border-radius: 8px;
-    object-fit: contain;
-    background: #fff;
-}
-
-@media (max-width: 700px) {
-    .admin-layout, #form-fields { grid-template-columns: minmax(0, 1fr); }
-}
-
 #admin-list-results .admin-product-action {
     min-height: 40px;
     padding: 8px 16px;
     border-radius: 8px;
     font-weight: 650;
-    transition: background 0.15s, border-color 0.15s,
-                box-shadow 0.15s, transform 0.15s;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 
 #admin-list-results .admin-product-action[data-action="approve"] {
@@ -293,4 +271,24 @@
 #admin-list-results .admin-product-action:focus-visible {
     outline: 3px solid #c9a8e5;
     outline-offset: 2px;
+}
+
+.admin-product-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.admin-product-gallery img {
+    width: 160px;
+    height: 160px;
+    border: 1px solid #dfe2e7;
+    border-radius: 8px;
+    object-fit: contain;
+    background: #fff;
+}
+
+@media (max-width: 700px) {
+    .admin-layout, #form-fields { grid-template-columns: minmax(0, 1fr); }
 }

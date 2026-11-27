@@ -47,13 +47,11 @@
 
                 <form id="admin-form" method="post">
                     <div id="form-fields"></div>
-                    <button id="preview-button" type="submit" disabled>
-                        요청 미리보기
-                    </button>
+                    <button id="send-button" type="submit" disabled>조회하기</button>
                 </form>
 
-                <p id="preview-message" role="status"></p>
-                <pre id="request-preview" hidden></pre>
+                <p id="admin-message" role="status" aria-live="polite"></p>
+                <section id="admin-list-results" hidden></section>
             </main>
         </div>
     </div>

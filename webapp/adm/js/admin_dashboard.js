@@ -13,6 +13,7 @@ const OPTION_LABELS = {
     APPROVE: "승인",
     REJECT: "반려",
     WITHDRAW: "철회",
+    HIDE: "숨김",
     BEST: "베스트",
     SALE: "세일",
     NEW: "신상",
@@ -334,29 +335,9 @@ const title = document.querySelector("#section-title");
 const actionSelect = document.querySelector("#action-select");
 const form = document.querySelector("#admin-form");
 const fields = document.querySelector("#form-fields");
-const message = document.querySelector("#preview-message");
-const preview = document.querySelector("#request-preview");
-const previewButton = document.querySelector("#preview-button");
-const listResults = document.createElement("section");
-listResults.id = "admin-list-results";
-listResults.hidden = true;
-preview.before(listResults);
-
-const existingSendButton = document.querySelector("#send-button");
-const sendButton = existingSendButton || document.createElement("button");
-
-previewButton.type = "button";
-sendButton.type = "button";
-sendButton.id = "send-button";
-sendButton.textContent = "서버에 요청";
-
-if (!existingSendButton) {
-    sendButton.style.cssText =
-        "margin:16px 0 0 8px;padding:10px 14px;border:0;" +
-        "border-radius:7px;background:#663399;color:#fff;" +
-        "font:inherit;cursor:pointer";
-    previewButton.insertAdjacentElement("afterend", sendButton);
-}
+const message = document.querySelector("#admin-message");
+const sendButton = document.querySelector("#send-button");
+const listResults = document.querySelector("#admin-list-results");
 
 let selectedActions = [];
 let selectedAction;
@@ -448,15 +429,79 @@ function renderForm() {
     inputs = selectedAction.fields.map(createInput);
 
     sendButton.disabled = !selectedAction.implemented;
-    sendButton.textContent = selectedAction.method === "GET"
-        ? "조회"
-        : "서버에 요청";
-    sendButton.style.opacity =
-        selectedAction.implemented ? "1" : "0.5";
-    sendButton.style.cursor =
-        selectedAction.implemented ? "pointer" : "not-allowed";
-
     updateConditionalFields();
+}
+
+function actionButtonLabel() {
+    const label = selectedAction.label;
+    const value = name => form.elements.namedItem(name)?.value;
+
+    if (selectedAction.method === "GET") return "조회하기";
+    if (label === "입점 신청 승인·반려") {
+        return value("decision") === "APPROVE" ? "입점 승인하기"
+            : value("decision") === "REJECT" ? "입점 반려하기" : "입점 처리하기";
+    }
+    if (label === "정산 확정·반려") {
+        return value("decision") === "COMPLETED" ? "정산 확정하기"
+            : value("decision") === "CANCELED" ? "정산 반려하기" : "정산 처리하기";
+    }
+    if (label === "출금 승인·반려") {
+        return value("decision") === "APPROVED" ? "출금 승인하기"
+            : value("decision") === "REJECTED" ? "출금 반려하기" : "출금 처리하기";
+    }
+    if (label === "공지사항·FAQ 작성") {
+        return value("board_type") === "NOTICE" ? "공지사항 작성하기"
+            : value("board_type") === "FAQ" ? "FAQ 작성하기" : "게시글 작성하기";
+    }
+    if (label === "베스트·세일·신상·특가 상품 지정·해제") {
+        return value("curation") === "REMOVE" ? "상품 지정 해제하기" : "상품 지정하기";
+    }
+    return ({
+        "회원 상태 변경": "회원 상태 변경하기",
+        "상품 승인": "상품 승인하기",
+        "상품 반려": "상품 반려하기",
+        "상품 철회": "상품 철회하기",
+        "카테고리 등록": "카테고리 등록하기",
+        "카테고리 수정": "카테고리 수정하기",
+        "수수료율 설정": "수수료율 저장하기",
+        "쿠폰 생성": "쿠폰 생성하기",
+        "쿠폰 발급": "쿠폰 발급하기",
+        "문의 답변 등록": "답변 등록하기"
+    })[label] ?? "저장하기";
+}
+
+function setMessage(text, state = "") {
+    message.textContent = text;
+    message.dataset.state = state;
+}
+
+function successMessage(requestedAction, request) {
+    const path = requestedAction.path;
+    const body = request.body;
+    if (path === "/coupons") {
+        return "쿠폰이 생성되었습니다. 발급하려면 쿠폰 ID를 확인해 주세요.";
+    }
+    if (path === "/coupons/{coupon_id}") return "쿠폰 발급이 완료되었습니다.";
+    if (path === "/categories") return "카테고리가 등록되었습니다.";
+    if (path === "/categories/{categoryId}") return "카테고리가 수정되었습니다.";
+    if (path === "/sellers/{sellerId}/commission-rate") return "수수료율이 변경되었습니다.";
+    if (path === "/curations") {
+        return body.curation === null ? "상품 지정이 해제되었습니다." : "상품 지정이 완료되었습니다.";
+    }
+    if (path === "/sellers/{sellerId}/approval") {
+        return body.decision === "APPROVE" ? "입점 승인이 완료되었습니다." : "입점 반려가 완료되었습니다.";
+    }
+    if (path === "/inquiries/{inquiryId}/answer") return "답변이 등록되었습니다.";
+    if (path === "/posts") {
+        return body.board_type === "FAQ" ? "FAQ가 작성되었습니다." : "공지사항이 작성되었습니다.";
+    }
+    if (path === "/settlements/{settlementId}") {
+        return body.decision === "COMPLETED" ? "정산이 확정되었습니다." : "정산이 반려되었습니다.";
+    }
+    if (path === "/withdrawals/{withdrawalId}") {
+        return body.decision === "APPROVED" ? "출금이 승인되었습니다." : "출금이 반려되었습니다.";
+    }
+    return `${requestedAction.label} 작업이 완료되었습니다.`;
 }
 
 function updateConditionalFields() {
@@ -476,11 +521,10 @@ function updateConditionalFields() {
         control.disabled = !visible;
     }
 
-    message.textContent = selectedAction.implemented
+    sendButton.textContent = actionButtonLabel();
+    setMessage(selectedAction.implemented
         ? ""
-        : "백엔드 API가 아직 구현되지 않아 요청 미리보기만 가능합니다.";
-
-    preview.hidden = true;
+        : "이 작업의 API는 아직 준비되지 않았습니다.");
 }
 
 function clearListResults() {
@@ -583,7 +627,6 @@ function renderListResults(result, requestedAction) {
     const heading = document.createElement("h3");
     heading.textContent = `${requestedAction.label} · 현재 페이지 ${items.length}건`;
     listResults.append(heading);
-
     if (requestedAction.path === "/api/categories") {
         const addButton = document.createElement("button");
         addButton.type = "button";
@@ -594,7 +637,6 @@ function renderListResults(result, requestedAction) {
         });
         listResults.append(addButton);
     }
-
     const hasRowAction = ["/api/categories", "/products"].includes(requestedAction.path);
 
     if (items.length === 0) {
@@ -615,7 +657,6 @@ function renderListResults(result, requestedAction) {
             cell.textContent = label;
             headerRow.append(cell);
         }
-
         if (hasRowAction) {
             const cell = document.createElement("th");
             cell.scope = "col";
@@ -627,21 +668,17 @@ function renderListResults(result, requestedAction) {
         const rows = requestedAction.path === "/api/categories"
             ? orderCategories(items)
             : items.map(item => ({ item, depth: 0 }));
-
         for (const { item, depth } of rows) {
             const row = document.createElement("tr");
-
             for (const [, key, kind] of view.columns) {
                 const cell = document.createElement("td");
                 cell.textContent = formatListValue(item?.[key], kind);
-
                 if (requestedAction.path === "/api/categories" && key === "name") {
                     cell.style.paddingLeft = `${12 + depth * 20}px`;
                     if (depth > 0) cell.textContent = `↳ ${cell.textContent}`;
                 }
                 row.append(cell);
             }
-
             if (hasRowAction) {
                 const cell = document.createElement("td");
                 const button = document.createElement("button");
@@ -650,7 +687,6 @@ function renderListResults(result, requestedAction) {
                 button.textContent = requestedAction.path === "/api/categories"
                     ? "수정"
                     : "상세";
-
                 button.addEventListener("click", function () {
                     if (requestedAction.path === "/api/categories") {
                         chooseAction("카테고리 수정", {
@@ -663,7 +699,6 @@ function renderListResults(result, requestedAction) {
                         sendButton.click();
                     }
                 });
-
                 cell.append(button);
                 row.append(cell);
             }
@@ -674,7 +709,6 @@ function renderListResults(result, requestedAction) {
         scroll.append(table);
         listResults.append(scroll);
     }
-
     listResults.hidden = false;
     return true;
 }
@@ -684,7 +718,6 @@ function renderProductDetail(result) {
     if (!product || typeof product !== "object") return false;
 
     clearListResults();
-
     const heading = document.createElement("h3");
     heading.textContent = `상품 상세 · ${product.product_id ?? ""}`;
     listResults.append(heading);
@@ -704,7 +737,6 @@ function renderProductDetail(result) {
         ["상세 이미지", "detail_images"],
         ["등록일", "created_at"]
     ];
-
     const table = document.createElement("table");
     const tbody = document.createElement("tbody");
 
@@ -713,11 +745,9 @@ function renderProductDetail(result) {
         const nameCell = document.createElement("th");
         nameCell.scope = "row";
         nameCell.textContent = label;
-
         const valueCell = document.createElement("td");
         valueCell.textContent = formatListValue(product[key], kind);
         valueCell.style.whiteSpace = "pre-wrap";
-
         row.append(nameCell, valueCell);
         tbody.append(row);
     }
@@ -729,11 +759,9 @@ function renderProductDetail(result) {
         product.thumbnail,
         ...(Array.isArray(product.detail_images) ? product.detail_images : [])
     ].filter(Boolean);
-
     if (imageUrls.length > 0) {
         const gallery = document.createElement("div");
         gallery.className = "admin-product-gallery";
-
         imageUrls.forEach(function (url, index) {
             const image = document.createElement("img");
             image.src = url;
@@ -741,13 +769,11 @@ function renderProductDetail(result) {
             image.loading = "lazy";
             gallery.append(image);
         });
-
         listResults.append(gallery);
     }
 
     const actions = document.createElement("div");
     actions.className = "admin-detail-actions";
-
     for (const label of ["상품 승인", "상품 반려", "상품 철회"]) {
         const button = document.createElement("button");
         button.type = "button";
@@ -758,14 +784,11 @@ function renderProductDetail(result) {
                 ? "reject"
                 : "withdraw";
         button.textContent = label;
-
         button.addEventListener("click", function () {
             chooseAction(label, { productId: product.product_id });
         });
-
         actions.append(button);
     }
-
     listResults.append(actions);
     listResults.hidden = false;
     return true;
@@ -888,31 +911,6 @@ function buildRequest() {
     };
 }
 
-function formatRequest(request) {
-    const lines = [
-        `${request.method} ${request.url}`,
-        "Authorization: Bearer <관리자 토큰>"
-    ];
-
-    if (request.body !== undefined) {
-        const isText = request.bodyFormat === "text";
-        lines.push(
-            `Content-Type: ${isText ? "text/plain" : "application/json"}`,
-            "",
-            isText ? request.body : JSON.stringify(request.body, null, 2)
-        );
-    }
-
-    return lines.join("\n");
-}
-
-function formatResponse(request, result, status) {
-    const responseBody = result === null
-        ? "(응답 본문 없음)"
-        : JSON.stringify(result, null, 2);
-    return `${formatRequest(request)}\n\n응답 (${status})\n${responseBody}`;
-}
-
 menuButtons.forEach(function (button) {
     button.addEventListener("click", function () {
         selectMenu(button);
@@ -923,35 +921,10 @@ actionSelect.addEventListener("change", renderForm);
 form.addEventListener("input", updateConditionalFields);
 form.addEventListener("change", updateConditionalFields);
 
-function showPreview() {
-    if (!form.reportValidity()) return;
-
-    queryVersion += 1;
-    clearListResults();
-    preview.hidden = true;
-
-    try {
-        preview.textContent = formatRequest(buildRequest());
-        preview.hidden = false;
-        message.textContent =
-            "미리보기입니다. 서버에 전송하지 않았습니다.";
-    } catch (error) {
-        message.textContent = error.message;
-    }
-}
-
-previewButton.addEventListener("click", showPreview);
-
-form.addEventListener("submit", function (event) {
-    event.preventDefault();
-    showPreview();
-});
-
 async function refreshCategories(headers, requestVersion) {
     try {
         const response = await fetch("/api/categories", { headers });
         const result = await response.json();
-
         if (
             requestVersion === queryVersion &&
             selectedMenuName === "catalog" &&
@@ -965,7 +938,8 @@ async function refreshCategories(headers, requestVersion) {
     }
 }
 
-sendButton.addEventListener("click", async function () {
+form.addEventListener("submit", async function (event) {
+    event.preventDefault();
     if (!selectedAction.implemented || !form.reportValidity()) {
         return;
     }
@@ -975,29 +949,27 @@ sendButton.addEventListener("click", async function () {
     try {
         request = buildRequest();
     } catch (error) {
-        message.textContent = error.message;
+        setMessage(error.message, "error");
         return;
     }
 
     const token = sessionStorage.getItem("accessToken");
 
     if (!token) {
-        message.textContent = "관리자 로그인이 필요합니다.";
+        setMessage("관리자 로그인이 필요합니다.", "error");
         return;
     }
 
     if (
         request.method !== "GET" &&
-        !window.confirm(`${selectedAction.label} 요청을 전송할까요?`)
+        !window.confirm("입력한 내용으로 진행할까요?")
     ) {
         return;
     }
 
     sendButton.disabled = true;
     clearListResults();
-    preview.hidden = true;
-    message.textContent = "서버에 요청 중...";
-
+    setMessage("처리 중...");
     const requestVersion = queryVersion;
     const requestedAction = selectedAction;
 
@@ -1035,10 +1007,7 @@ sendButton.addEventListener("click", async function () {
         }
 
         if (!response.ok || result?.code !== "ok") {
-            preview.textContent = formatResponse(request, result, response.status);
-            preview.hidden = false;
-
-            message.textContent =
+            setMessage(
                 result?.message ||
                 (response.status >= 500
                     ? `서버 오류가 발생했습니다. (${response.status}) 백엔드 로그를 확인해 주세요.`
@@ -1046,59 +1015,34 @@ sendButton.addEventListener("click", async function () {
                         ? "관리자 권한이 없습니다. (403)"
                     : response.status === 404
                         ? "API 경로를 찾지 못했습니다. 백엔드 배포와 경로 매핑을 확인해 주세요. (404)"
-                    : `요청에 실패했습니다. (${response.status})`);
-
+                    : `요청에 실패했습니다. (${response.status})`), "error");
             if (requestedAction.path === "/sellers/{sellerId}/commission-rate" && result?.code === "no") {
-                message.textContent = "해당 판매자의 수수료율을 변경하지 못했습니다. 판매자 ID와 등록된 수수료율을 확인해 주세요.";
+                setMessage("해당 판매자의 수수료율을 변경하지 못했습니다. 판매자 ID와 등록된 수수료율을 확인해 주세요.", "error");
             }
             return;
         }
 
         if (request.method === "GET" && requestedAction.path === "/products/{productId}") {
             if (!renderProductDetail(result)) {
-                preview.textContent = formatResponse(request, result, response.status);
-                preview.hidden = false;
-                message.textContent = "상품 상세 응답 형식을 확인해 주세요.";
+                setMessage("상품 상세 응답 형식을 확인해 주세요.", "error");
                 return;
             }
-            message.textContent = "상품 상세 조회가 완료되었습니다.";
+            setMessage("상품 상세 조회가 완료되었습니다.", "success");
         } else if (request.method === "GET" && LIST_VIEWS[requestedAction.path]) {
             if (!renderListResults(result, requestedAction)) {
-                preview.textContent = formatResponse(request, result, response.status);
-                preview.hidden = false;
-                message.textContent = "조회 응답 형식이 규격서와 다릅니다.";
+                setMessage("조회 응답 형식이 규격서와 다릅니다.", "error");
                 return;
             }
-            message.textContent = "조회가 완료되었습니다.";
+            setMessage("조회가 완료되었습니다.", "success");
         } else {
-            preview.textContent = formatResponse(request, result, response.status);
-            preview.hidden = false;
-
-            message.textContent = requestedAction.path === "/coupons"
-                ? "쿠폰이 생성되었습니다. 발급하려면 쿠폰 ID를 확인해 주세요."
-                : requestedAction.path === "/coupons/{coupon_id}"
-                    ? "쿠폰 발급이 완료되었습니다."
-                    : requestedAction.path === "/categories"
-                        ? "카테고리가 등록되었습니다."
-                        : requestedAction.path === "/categories/{categoryId}"
-                            ? "카테고리가 수정되었습니다."
-                    : requestedAction.path === "/sellers/{sellerId}/commission-rate"
-                        ? "수수료율이 변경되었습니다."
-                    : requestedAction.path === "/curations"
-                        ? request.body.curation === null
-                            ? "상품 지정이 해제되었습니다."
-                            : "상품 지정이 완료되었습니다."
-                    : "서버 요청이 완료되었습니다.";
-
+            setMessage(successMessage(requestedAction, request), "success");
             if (["/categories", "/categories/{categoryId}"].includes(requestedAction.path)) {
                 await refreshCategories(headers, requestVersion);
             }
         }
     } catch (error) {
         if (requestVersion === queryVersion) {
-            preview.textContent = formatRequest(request);
-            preview.hidden = false;
-            message.textContent = "서버에 연결할 수 없습니다.";
+            setMessage("서버에 연결할 수 없습니다.", "error");
         }
     } finally {
         sendButton.disabled = !selectedAction.implemented;
@@ -1106,7 +1050,6 @@ sendButton.addEventListener("click", async function () {
 });
 
 selectMenu(menuButtons[0]);
-previewButton.disabled = false;
 
 const logoutButton = document.querySelector("#logout-button");
 
