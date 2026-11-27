@@ -13,7 +13,6 @@ const OPTION_LABELS = {
     APPROVE: "승인",
     REJECT: "반려",
     WITHDRAW: "철회",
-    HIDE: "숨김",
     BEST: "베스트",
     SALE: "세일",
     NEW: "신상",
