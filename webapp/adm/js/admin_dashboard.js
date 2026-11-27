@@ -90,13 +90,13 @@ const menus = {
         action("상품 상세 조회", "GET", "/products/{productId}", [
             id("productId", "상품 ID")
         ], true),
-        action("상품 승인", "PATCH", "/products/{productId}", [
+        action("상품 승인", "PATCH", "/products/{productId}/approval", [
             id("productId", "상품 ID")
         ], true, "json", { decision: "APPROVE" }),
-        action("상품 반려", "PATCH", "/products/{productId}", [
+        action("상품 반려", "PATCH", "/products/{productId}/approval", [
             id("productId", "상품 ID")
         ], true, "json", { decision: "REJECT" }),
-        action("상품 철회", "PATCH", "/products/{productId}", [
+        action("상품 철회", "PATCH", "/products/{productId}/approval", [
             id("productId", "상품 ID")
         ], true, "json", { decision: "WITHDRAW" })
     ],
@@ -117,12 +117,20 @@ const menus = {
                 min: 1
             })
         ], true),
-        action("베스트·세일·신상·특가 상품 지정", "PUT", "/curations", [
-            choice("list_type", "목록 종류", "BEST SALE NEW BENEFIT"),
+        action("베스트·세일·신상·특가 상품 지정·해제", "PUT", "/curations", [
+            choice("curation", "지정할 목록", "BEST SALE NEW_ARRIVAL BENEFIT REMOVE", {
+                labels: {
+                    BEST: "베스트",
+                    SALE: "세일",
+                    NEW_ARRIVAL: "신상",
+                    BENEFIT: "특가",
+                    REMOVE: "지정 해제"
+                }
+            }),
             field("product_ids", "상품 ID 목록 (쉼표로 구분)", {
                 type: "ids"
             })
-        ])
+        ], true)
     ],
     orders: [
         action("전체 주문 조회", "GET", "/orders", [
@@ -576,6 +584,7 @@ function renderListResults(result, requestedAction) {
     const heading = document.createElement("h3");
     heading.textContent = `${requestedAction.label} · 현재 페이지 ${items.length}건`;
     listResults.append(heading);
+
     if (requestedAction.path === "/api/categories") {
         const addButton = document.createElement("button");
         addButton.type = "button";
@@ -586,6 +595,7 @@ function renderListResults(result, requestedAction) {
         });
         listResults.append(addButton);
     }
+
     const hasRowAction = ["/api/categories", "/products"].includes(requestedAction.path);
 
     if (items.length === 0) {
@@ -606,6 +616,7 @@ function renderListResults(result, requestedAction) {
             cell.textContent = label;
             headerRow.append(cell);
         }
+
         if (hasRowAction) {
             const cell = document.createElement("th");
             cell.scope = "col";
@@ -617,17 +628,21 @@ function renderListResults(result, requestedAction) {
         const rows = requestedAction.path === "/api/categories"
             ? orderCategories(items)
             : items.map(item => ({ item, depth: 0 }));
+
         for (const { item, depth } of rows) {
             const row = document.createElement("tr");
+
             for (const [, key, kind] of view.columns) {
                 const cell = document.createElement("td");
                 cell.textContent = formatListValue(item?.[key], kind);
+
                 if (requestedAction.path === "/api/categories" && key === "name") {
                     cell.style.paddingLeft = `${12 + depth * 20}px`;
                     if (depth > 0) cell.textContent = `↳ ${cell.textContent}`;
                 }
                 row.append(cell);
             }
+
             if (hasRowAction) {
                 const cell = document.createElement("td");
                 const button = document.createElement("button");
@@ -636,6 +651,7 @@ function renderListResults(result, requestedAction) {
                 button.textContent = requestedAction.path === "/api/categories"
                     ? "수정"
                     : "상세";
+
                 button.addEventListener("click", function () {
                     if (requestedAction.path === "/api/categories") {
                         chooseAction("카테고리 수정", {
@@ -648,15 +664,16 @@ function renderListResults(result, requestedAction) {
                         sendButton.click();
                     }
                 });
+
                 cell.append(button);
                 row.append(cell);
             }
             tbody.append(row);
         }
 
-            table.append(thead, tbody);
-            scroll.append(table);
-            listResults.append(scroll);
+        table.append(thead, tbody);
+        scroll.append(table);
+        listResults.append(scroll);
     }
 
     listResults.hidden = false;
@@ -668,6 +685,7 @@ function renderProductDetail(result) {
     if (!product || typeof product !== "object") return false;
 
     clearListResults();
+
     const heading = document.createElement("h3");
     heading.textContent = `상품 상세 · ${product.product_id ?? ""}`;
     listResults.append(heading);
@@ -687,6 +705,7 @@ function renderProductDetail(result) {
         ["상세 이미지", "detail_images"],
         ["등록일", "created_at"]
     ];
+
     const table = document.createElement("table");
     const tbody = document.createElement("tbody");
 
@@ -695,9 +714,11 @@ function renderProductDetail(result) {
         const nameCell = document.createElement("th");
         nameCell.scope = "row";
         nameCell.textContent = label;
+
         const valueCell = document.createElement("td");
         valueCell.textContent = formatListValue(product[key], kind);
         valueCell.style.whiteSpace = "pre-wrap";
+
         row.append(nameCell, valueCell);
         tbody.append(row);
     }
@@ -709,9 +730,11 @@ function renderProductDetail(result) {
         product.thumbnail,
         ...(Array.isArray(product.detail_images) ? product.detail_images : [])
     ].filter(Boolean);
+
     if (imageUrls.length > 0) {
         const gallery = document.createElement("div");
         gallery.className = "admin-product-gallery";
+
         imageUrls.forEach(function (url, index) {
             const image = document.createElement("img");
             image.src = url;
@@ -719,20 +742,31 @@ function renderProductDetail(result) {
             image.loading = "lazy";
             gallery.append(image);
         });
+
         listResults.append(gallery);
     }
 
     const actions = document.createElement("div");
     actions.className = "admin-detail-actions";
+
     for (const label of ["상품 승인", "상품 반려", "상품 철회"]) {
         const button = document.createElement("button");
         button.type = "button";
+        button.className = "admin-product-action";
+        button.dataset.action = label === "상품 승인"
+            ? "approve"
+            : label === "상품 반려"
+                ? "reject"
+                : "withdraw";
         button.textContent = label;
+
         button.addEventListener("click", function () {
             chooseAction(label, { productId: product.product_id });
         });
+
         actions.append(button);
     }
+
     listResults.append(actions);
     listResults.hidden = false;
     return true;
@@ -834,6 +868,10 @@ function buildRequest() {
         throw new Error("퍼센트 할인 값은 1~100으로 입력해 주세요.");
     }
 
+    if (selectedAction.path === "/curations" && data.curation === "REMOVE") {
+        data.curation = null;
+    }
+
     if (selectedAction.method === "GET") {
         const query = new URLSearchParams(data).toString();
 
@@ -914,6 +952,7 @@ async function refreshCategories(headers, requestVersion) {
     try {
         const response = await fetch("/api/categories", { headers });
         const result = await response.json();
+
         if (
             requestVersion === queryVersion &&
             selectedMenuName === "catalog" &&
@@ -959,6 +998,7 @@ sendButton.addEventListener("click", async function () {
     clearListResults();
     preview.hidden = true;
     message.textContent = "서버에 요청 중...";
+
     const requestVersion = queryVersion;
     const requestedAction = selectedAction;
 
@@ -998,6 +1038,7 @@ sendButton.addEventListener("click", async function () {
         if (!response.ok || result?.code !== "ok") {
             preview.textContent = formatResponse(request, result, response.status);
             preview.hidden = false;
+
             message.textContent =
                 result?.message ||
                 (response.status >= 500
@@ -1007,6 +1048,7 @@ sendButton.addEventListener("click", async function () {
                     : response.status === 404
                         ? "API 경로를 찾지 못했습니다. 백엔드 배포와 경로 매핑을 확인해 주세요. (404)"
                     : `요청에 실패했습니다. (${response.status})`);
+
             if (requestedAction.path === "/sellers/{sellerId}/commission-rate" && result?.code === "no") {
                 message.textContent = "해당 판매자의 수수료율을 변경하지 못했습니다. 판매자 ID와 등록된 수수료율을 확인해 주세요.";
             }
@@ -1032,6 +1074,7 @@ sendButton.addEventListener("click", async function () {
         } else {
             preview.textContent = formatResponse(request, result, response.status);
             preview.hidden = false;
+
             message.textContent = requestedAction.path === "/coupons"
                 ? "쿠폰이 생성되었습니다. 발급하려면 쿠폰 ID를 확인해 주세요."
                 : requestedAction.path === "/coupons/{coupon_id}"
@@ -1042,7 +1085,12 @@ sendButton.addEventListener("click", async function () {
                             ? "카테고리가 수정되었습니다."
                     : requestedAction.path === "/sellers/{sellerId}/commission-rate"
                         ? "수수료율이 변경되었습니다."
+                    : requestedAction.path === "/curations"
+                        ? request.body.curation === null
+                            ? "상품 지정이 해제되었습니다."
+                            : "상품 지정이 완료되었습니다."
                     : "서버 요청이 완료되었습니다.";
+
             if (["/categories", "/categories/{categoryId}"].includes(requestedAction.path)) {
                 await refreshCategories(headers, requestVersion);
             }
