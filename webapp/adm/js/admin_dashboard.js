@@ -74,7 +74,7 @@ const menus = {
         ], true)
     ],
     products: [
-        action("상품 승인·반려·숨김", "PATCH", "/products/{productId}/approval", [
+        action("판매자 상품 승인·반려·숨김", "PATCH", "/products/{productId}/approval", [
             id("productId", "상품 ID"),
             choice("decision", "처리", "APPROVE REJECT HIDE"),
             field("reject_reason", "반려 사유", {
