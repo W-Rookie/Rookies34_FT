@@ -85,7 +85,7 @@ const api = {
   pwVerifySms: (login_id, phone, verify_code) => request('POST', '/auth/password-reset/sms/verify', { body: { login_id, phone, verify_code } }),
   pwSendEmail: (login_id, name, email) => request('POST', '/auth/password-reset/email', { body: { login_id, name, email } }),
   pwVerifyEmail: (login_id, email, verify_code) => request('POST', '/auth/password-reset/email/verify', { body: { login_id, email, verify_code } }),
-  pwReset: (reset_token, new_password) => request('PUT', '/auth/password-reset', { body: { reset_token, new_password } }),
+  pwReset: (reset_token, new_password, new_password_confirm) => request('PUT', '/auth/password-reset', { body: { reset_token, new_password, new_password_confirm } }),
 
   // ---------- 상품 (U-20 ~ U-25) ----------
   // list_type: CATEGORY | BEST | SALE | NEW | BENEFIT, sort: RECOMMEND | NEW | PRICE_ASC | PRICE_DESC
