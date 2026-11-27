@@ -364,6 +364,6 @@
   </p>
 </main>
 
-<script src="resources/js/seller/signup.js?v=signup-layout-3"></script>
+<script src="resources/js/seller/signup.js?v=signup-fix-1"></script>
 </body>
 </html>
