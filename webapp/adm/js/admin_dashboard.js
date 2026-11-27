@@ -12,6 +12,7 @@ const OPTION_LABELS = {
     REJECTED: "반려",
     APPROVE: "승인",
     REJECT: "반려",
+    WITHDRAW: "철회",
     HIDE: "숨김",
     BEST: "베스트",
     SALE: "세일",
@@ -38,8 +39,8 @@ const number = (name, label, options = {}) =>
     field(name, label, { type: "number", ...options });
 const choice = (name, label, choices, options = {}) =>
     field(name, label, { choices: choices.split(" "), ...options });
-const action = (label, method, path, fields, implemented = false, bodyFormat = "json") =>
-    ({ label, method, path, fields, implemented, bodyFormat });
+const action = (label, method, path, fields, implemented = false, bodyFormat = "json", fixedBody = {}) =>
+    ({ label, method, path, fields, implemented, bodyFormat, fixedBody });
 
 const optional = { required: false };
 const id = (name, label) => number(name, label, { min: 1, path: true });
@@ -74,24 +75,48 @@ const menus = {
         ], true)
     ],
     products: [
-        action("판매자 상품 승인·반려·숨김", "PATCH", "/products/{productId}/approval", [
-            id("productId", "상품 ID"),
-            choice("decision", "처리", "APPROVE REJECT HIDE"),
-            field("reject_reason", "반려 사유", {
+        action("상품 목록 조회", "GET", "/products", [
+            choice("status", "상품 상태", "PENDING APPROVED REJECTED WITHDRAWN", {
                 ...optional,
-                when: ["decision", "REJECT"]
-            })
-        ])
+                labels: {
+                    PENDING: "승인 대기",
+                    APPROVED: "승인 완료",
+                    REJECTED: "반려",
+                    WITHDRAWN: "철회됨"
+                }
+            }),
+            number("page", "페이지", { ...optional, min: 1, defaultValue: 1 })
+        ], true),
+        action("상품 상세 조회", "GET", "/products/{productId}", [
+            id("productId", "상품 ID")
+        ], true),
+        action("상품 승인", "PATCH", "/products/{productId}", [
+            id("productId", "상품 ID")
+        ], true, "json", { decision: "APPROVE" }),
+        action("상품 반려", "PATCH", "/products/{productId}", [
+            id("productId", "상품 ID")
+        ], true, "json", { decision: "REJECT" }),
+        action("상품 철회", "PATCH", "/products/{productId}", [
+            id("productId", "상품 ID")
+        ], true, "json", { decision: "WITHDRAW" })
     ],
     catalog: [
+        action("카테고리 목록 조회", "GET", "/api/categories", [], true),
         action("카테고리 등록", "POST", "/categories", [
             field("name", "카테고리명", { maxLength: 20 }),
             number("parent_id", "상위 카테고리 ID", {
                 ...optional,
                 min: 1
-            }),
-            number("sort_order", "노출 순서", optional)
-        ]),
+            })
+        ], true),
+        action("카테고리 수정", "PUT", "/categories/{categoryId}", [
+            id("categoryId", "카테고리 ID"),
+            field("name", "카테고리명", { maxLength: 20 }),
+            number("parent_id", "상위 카테고리 ID", {
+                ...optional,
+                min: 1
+            })
+        ], true),
         action("베스트·세일·신상·특가 상품 지정", "PUT", "/curations", [
             choice("list_type", "목록 종류", "BEST SALE NEW BENEFIT"),
             field("product_ids", "상품 ID 목록 (쉼표로 구분)", {
@@ -125,9 +150,9 @@ const menus = {
             choice("status", "정산 상태", "PENDING COMPLETED CANCELED", {
                 ...optional,
                 labels: {
-                    PENDING: "정산 대기",
-                    COMPLETED: "정산 완료",
-                    CANCELED: "정산 취소"
+                    PENDING: "보류 중",
+                    COMPLETED: "완료됨",
+                    CANCELED: "취소됨"
                 }
             }),
             field("date_from", "시작일", { ...optional, type: "date" }),
@@ -136,7 +161,14 @@ const menus = {
         ], true),
         action("출금 신청 내역 조회", "GET", "/withdrawals", [
             field("seller_id", "판매자 아이디", optional),
-            choice("status", "처리 상태", "REQUESTED APPROVED REJECTED", optional),
+            choice("status", "처리 상태", "REQUESTED APPROVED REJECTED", {
+                ...optional,
+                labels: {
+                    REQUESTED: "요청됨",
+                    APPROVED: "승인됨",
+                    REJECTED: "거절됨"
+                }
+            }),
             field("date_from", "시작일", { ...optional, type: "date" }),
             field("date_to", "종료일", { ...optional, type: "date" }),
             number("page", "페이지", { ...optional, min: 1, defaultValue: 1 })
@@ -147,20 +179,31 @@ const menus = {
             "/sellers/{sellerId}/commission-rate",
             [
                 field("sellerId", "판매자 ID", { path: true }),
-                number("commission_rate", "수수료율 (예: 15%는 0.15)", {
+                number("commission_rate", "수수료율 (0~1, 예: 0.1 = 10%)", {
                     min: 0,
                     max: 1,
-                    step: 0.01
+                    step: 0.0001
                 })
-            ]
+            ],
+            true
         ),
         action("정산 확정·반려", "PATCH", "/settlements/{settlementId}", [
             id("settlementId", "정산 ID"),
-            decision()
+            choice("decision", "처리", "COMPLETED CANCELED", {
+                labels: {
+                    COMPLETED: "확정 (완료됨)",
+                    CANCELED: "반려 (취소됨)"
+                }
+            })
         ], true),
         action("출금 승인·반려", "PATCH", "/withdrawals/{withdrawalId}", [
             id("withdrawalId", "출금 신청 ID"),
-            decision()
+            choice("decision", "처리", "APPROVED REJECTED", {
+                labels: {
+                    APPROVED: "승인 (승인됨)",
+                    REJECTED: "반려 (거절됨)"
+                }
+            })
         ], true)
     ],
     coupons: [
@@ -210,6 +253,26 @@ const menus = {
 };
 
 const LIST_VIEWS = {
+    "/api/categories": {
+        key: "categories",
+        columns: [
+            ["카테고리 ID", "category_id"],
+            ["카테고리명", "name"],
+            ["상위 카테고리 ID", "parent_id"]
+        ]
+    },
+    "/products": {
+        key: "products",
+        columns: [
+            ["상품 ID", "product_id"],
+            ["판매자 ID", "seller_id"],
+            ["상품명", "name"],
+            ["카테고리 ID", "category_id"],
+            ["가격", "price", "money"],
+            ["상태", "status", "productStatus"],
+            ["등록일", "created_at"]
+        ]
+    },
     "/users": {
         key: "users",
         columns: [
@@ -250,7 +313,7 @@ const LIST_VIEWS = {
             ["출금 신청 ID", "withdrawal_id"],
             ["판매자 ID", "seller_id"],
             ["출금 금액", "amount", "money"],
-            ["상태", "status", "status"],
+            ["상태", "status", "withdrawalStatus"],
             ["신청일", "requested_at"],
             ["처리일", "processed_at"]
         ]
@@ -290,10 +353,13 @@ if (!existingSendButton) {
 
 let selectedActions = [];
 let selectedAction;
+let selectedMenuName = "";
 let inputs = [];
 let queryVersion = 0;
 
 function selectMenu(button) {
+    selectedMenuName = button.dataset.menu;
+    clearListResults();
     menuButtons.forEach(function (menuButton) {
         menuButton.setAttribute(
             "aria-pressed",
@@ -388,7 +454,9 @@ function renderForm() {
 
 function updateConditionalFields() {
     queryVersion += 1;
-    clearListResults();
+    if (selectedMenuName !== "catalog") {
+        clearListResults();
+    }
 
     for (const { spec, control, row } of inputs) {
         if (!spec.when) continue;
@@ -420,11 +488,26 @@ function formatListValue(value, kind) {
     if (kind === "status") {
         return OPTION_LABELS[value] ?? String(value);
     }
+    if (kind === "productStatus") {
+        return {
+            PENDING: "승인 대기",
+            APPROVED: "승인 완료",
+            REJECTED: "반려",
+            WITHDRAWN: "철회됨"
+        }[value] ?? String(value);
+    }
     if (kind === "settlementStatus") {
         return {
-            PENDING: "정산 대기",
-            COMPLETED: "정산 완료",
-            CANCELED: "정산 취소"
+            PENDING: "보류 중",
+            COMPLETED: "완료됨",
+            CANCELED: "취소됨"
+        }[value] ?? String(value);
+    }
+    if (kind === "withdrawalStatus") {
+        return {
+            REQUESTED: "요청됨",
+            APPROVED: "승인됨",
+            REJECTED: "거절됨"
         }[value] ?? String(value);
     }
     if (kind === "money") {
@@ -434,6 +517,52 @@ function formatListValue(value, kind) {
             : String(value);
     }
     return String(value);
+}
+
+function chooseAction(label, values = {}) {
+    const index = selectedActions.findIndex(item => item.label === label);
+    if (index < 0) return;
+
+    actionSelect.value = String(index);
+    renderForm();
+
+    for (const [name, value] of Object.entries(values)) {
+        const control = form.elements.namedItem(name);
+        if (control) control.value = value == null ? "" : String(value);
+    }
+}
+
+function orderCategories(items) {
+    const byId = new Map(items.map(item => [String(item.category_id), item]));
+    const children = new Map();
+    const roots = [];
+    const ordered = [];
+    const visited = new Set();
+
+    for (const item of items) {
+        const parentId = item.parent_id == null ? null : String(item.parent_id);
+        const itemId = String(item.category_id);
+        if (parentId && byId.has(parentId) && parentId !== itemId) {
+            if (!children.has(parentId)) children.set(parentId, []);
+            children.get(parentId).push(item);
+        } else {
+            roots.push(item);
+        }
+    }
+
+    function visit(item, depth) {
+        const itemId = String(item.category_id);
+        if (visited.has(itemId)) return;
+        visited.add(itemId);
+        ordered.push({ item, depth });
+        for (const child of children.get(itemId) ?? []) {
+            visit(child, depth + 1);
+        }
+    }
+
+    roots.forEach(item => visit(item, 0));
+    items.forEach(item => visit(item, 0));
+    return ordered;
 }
 
 function renderListResults(result, requestedAction) {
@@ -447,6 +576,17 @@ function renderListResults(result, requestedAction) {
     const heading = document.createElement("h3");
     heading.textContent = `${requestedAction.label} · 현재 페이지 ${items.length}건`;
     listResults.append(heading);
+    if (requestedAction.path === "/api/categories") {
+        const addButton = document.createElement("button");
+        addButton.type = "button";
+        addButton.className = "admin-list-action";
+        addButton.textContent = "새 카테고리 등록";
+        addButton.addEventListener("click", function () {
+            chooseAction("카테고리 등록");
+        });
+        listResults.append(addButton);
+    }
+    const hasRowAction = ["/api/categories", "/products"].includes(requestedAction.path);
 
     if (items.length === 0) {
         const empty = document.createElement("p");
@@ -466,22 +606,134 @@ function renderListResults(result, requestedAction) {
             cell.textContent = label;
             headerRow.append(cell);
         }
+        if (hasRowAction) {
+            const cell = document.createElement("th");
+            cell.scope = "col";
+            cell.textContent = "작업";
+            headerRow.append(cell);
+        }
         thead.append(headerRow);
 
-        for (const item of items) {
+        const rows = requestedAction.path === "/api/categories"
+            ? orderCategories(items)
+            : items.map(item => ({ item, depth: 0 }));
+        for (const { item, depth } of rows) {
             const row = document.createElement("tr");
             for (const [, key, kind] of view.columns) {
                 const cell = document.createElement("td");
                 cell.textContent = formatListValue(item?.[key], kind);
+                if (requestedAction.path === "/api/categories" && key === "name") {
+                    cell.style.paddingLeft = `${12 + depth * 20}px`;
+                    if (depth > 0) cell.textContent = `↳ ${cell.textContent}`;
+                }
+                row.append(cell);
+            }
+            if (hasRowAction) {
+                const cell = document.createElement("td");
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "admin-list-action";
+                button.textContent = requestedAction.path === "/api/categories"
+                    ? "수정"
+                    : "상세";
+                button.addEventListener("click", function () {
+                    if (requestedAction.path === "/api/categories") {
+                        chooseAction("카테고리 수정", {
+                            categoryId: item.category_id,
+                            name: item.name,
+                            parent_id: item.parent_id
+                        });
+                    } else {
+                        chooseAction("상품 상세 조회", { productId: item.product_id });
+                        sendButton.click();
+                    }
+                });
+                cell.append(button);
                 row.append(cell);
             }
             tbody.append(row);
         }
 
-        table.append(thead, tbody);
-        scroll.append(table);
-        listResults.append(scroll);
+            table.append(thead, tbody);
+            scroll.append(table);
+            listResults.append(scroll);
     }
+
+    listResults.hidden = false;
+    return true;
+}
+
+function renderProductDetail(result) {
+    const product = result?.product;
+    if (!product || typeof product !== "object") return false;
+
+    clearListResults();
+    const heading = document.createElement("h3");
+    heading.textContent = `상품 상세 · ${product.product_id ?? ""}`;
+    listResults.append(heading);
+
+    const details = [
+        ["상품명", "name"],
+        ["판매자 ID", "seller_id"],
+        ["상태", "status", "productStatus"],
+        ["카테고리 ID", "category_id"],
+        ["가격", "price", "money"],
+        ["할인율", "discount_rate"],
+        ["재고", "stock"],
+        ["보관 방식", "storage_type"],
+        ["원산지", "origin"],
+        ["설명", "description"],
+        ["대표 이미지", "thumbnail"],
+        ["상세 이미지", "detail_images"],
+        ["등록일", "created_at"]
+    ];
+    const table = document.createElement("table");
+    const tbody = document.createElement("tbody");
+
+    for (const [label, key, kind] of details) {
+        const row = document.createElement("tr");
+        const nameCell = document.createElement("th");
+        nameCell.scope = "row";
+        nameCell.textContent = label;
+        const valueCell = document.createElement("td");
+        valueCell.textContent = formatListValue(product[key], kind);
+        valueCell.style.whiteSpace = "pre-wrap";
+        row.append(nameCell, valueCell);
+        tbody.append(row);
+    }
+
+    table.append(tbody);
+    listResults.append(table);
+
+    const imageUrls = [
+        product.thumbnail,
+        ...(Array.isArray(product.detail_images) ? product.detail_images : [])
+    ].filter(Boolean);
+    if (imageUrls.length > 0) {
+        const gallery = document.createElement("div");
+        gallery.className = "admin-product-gallery";
+        imageUrls.forEach(function (url, index) {
+            const image = document.createElement("img");
+            image.src = url;
+            image.alt = index === 0 ? "상품 대표 이미지" : `상품 상세 이미지 ${index}`;
+            image.loading = "lazy";
+            gallery.append(image);
+        });
+        listResults.append(gallery);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "admin-detail-actions";
+    for (const label of ["상품 승인", "상품 반려", "상품 철회"]) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = label;
+        button.addEventListener("click", function () {
+            chooseAction(label, { productId: product.product_id });
+        });
+        actions.append(button);
+    }
+    listResults.append(actions);
     listResults.hidden = false;
     return true;
 }
@@ -538,8 +790,10 @@ function readValue(spec, control) {
 }
 
 function buildRequest() {
-    let path = API_BASE + selectedAction.path;
-    const data = {};
+    let path = selectedAction.path.startsWith("/api/")
+        ? selectedAction.path
+        : API_BASE + selectedAction.path;
+    const data = { ...selectedAction.fixedBody };
 
     for (const { spec, control } of inputs) {
         if (control.disabled) continue;
@@ -656,6 +910,23 @@ form.addEventListener("submit", function (event) {
     showPreview();
 });
 
+async function refreshCategories(headers, requestVersion) {
+    try {
+        const response = await fetch("/api/categories", { headers });
+        const result = await response.json();
+        if (
+            requestVersion === queryVersion &&
+            selectedMenuName === "catalog" &&
+            response.ok &&
+            result?.code === "ok"
+        ) {
+            renderListResults(result, menus.catalog[0]);
+        }
+    } catch (error) {
+        return;
+    }
+}
+
 sendButton.addEventListener("click", async function () {
     if (!selectedAction.implemented || !form.reportValidity()) {
         return;
@@ -736,10 +1007,21 @@ sendButton.addEventListener("click", async function () {
                     : response.status === 404
                         ? "API 경로를 찾지 못했습니다. 백엔드 배포와 경로 매핑을 확인해 주세요. (404)"
                     : `요청에 실패했습니다. (${response.status})`);
+            if (requestedAction.path === "/sellers/{sellerId}/commission-rate" && result?.code === "no") {
+                message.textContent = "해당 판매자의 수수료율을 변경하지 못했습니다. 판매자 ID와 등록된 수수료율을 확인해 주세요.";
+            }
             return;
         }
 
-        if (request.method === "GET" && LIST_VIEWS[requestedAction.path]) {
+        if (request.method === "GET" && requestedAction.path === "/products/{productId}") {
+            if (!renderProductDetail(result)) {
+                preview.textContent = formatResponse(request, result, response.status);
+                preview.hidden = false;
+                message.textContent = "상품 상세 응답 형식을 확인해 주세요.";
+                return;
+            }
+            message.textContent = "상품 상세 조회가 완료되었습니다.";
+        } else if (request.method === "GET" && LIST_VIEWS[requestedAction.path]) {
             if (!renderListResults(result, requestedAction)) {
                 preview.textContent = formatResponse(request, result, response.status);
                 preview.hidden = false;
@@ -754,7 +1036,16 @@ sendButton.addEventListener("click", async function () {
                 ? "쿠폰이 생성되었습니다. 발급하려면 쿠폰 ID를 확인해 주세요."
                 : requestedAction.path === "/coupons/{coupon_id}"
                     ? "쿠폰 발급이 완료되었습니다."
+                    : requestedAction.path === "/categories"
+                        ? "카테고리가 등록되었습니다."
+                        : requestedAction.path === "/categories/{categoryId}"
+                            ? "카테고리가 수정되었습니다."
+                    : requestedAction.path === "/sellers/{sellerId}/commission-rate"
+                        ? "수수료율이 변경되었습니다."
                     : "서버 요청이 완료되었습니다.";
+            if (["/categories", "/categories/{categoryId}"].includes(requestedAction.path)) {
+                await refreshCategories(headers, requestVersion);
+            }
         }
     } catch (error) {
         if (requestVersion === queryVersion) {
