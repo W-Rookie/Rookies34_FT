@@ -101,7 +101,7 @@
       // 백엔드 @RequestParam String id 기준
       const data = await api.get(
         "/auth/check-id",
-        { id: loginId },
+        { login_id: loginId },
         { skipAuthRedirect: true }
       );
 
