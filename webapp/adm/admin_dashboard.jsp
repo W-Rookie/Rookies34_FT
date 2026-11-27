@@ -15,8 +15,8 @@
             <ul>
                 <li><button type="button" data-menu="users">회원정보 관리</button></li>
                 <li><button type="button" data-menu="sellers">판매자 입점 승인</button></li>
-                <li><button type="button" data-menu="products">상품 검증·승인</button></li>
                 <li><button type="button" data-menu="catalog">카테고리·기획전 관리</button></li>
+                <li><button type="button" data-menu="products">판매자 상품 검증·승인</button></li>
                 <li><button type="button" data-menu="orders">주문·배송 현황</button></li>
                 <li><button type="button" data-menu="settlements">판매자 정산·수수료 관리</button></li>
                 <li><button type="button" data-menu="coupons">쿠폰 발급</button></li>
@@ -58,4 +58,4 @@
         </div>
     </div>
 </body>
-</html>
+</html>
