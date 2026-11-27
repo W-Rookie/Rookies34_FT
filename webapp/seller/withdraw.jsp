@@ -30,5 +30,5 @@
 
 <div id="pager" class="pager"></div>
 
-<script src="resources/js/seller/withdraw.js?v=20261125-R5"></script>
+<script src="resources/js/seller/withdraw.js?v=pager-design-1"></script>
 <%@ include file="include/footer.jsp" %>
