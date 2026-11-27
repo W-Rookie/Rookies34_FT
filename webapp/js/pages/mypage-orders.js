@@ -12,7 +12,7 @@ async function load() {
     <li class="order-card">
       <p class="order-date">${o.ordered_at.slice(0, 10)} · 주문번호 ${o.order_id}</p>
       <p class="order-name">${o.product_name}${o.item_count > 1 ? ` 외 ${o.item_count - 1}건` : ''}</p>
-      <p>${won(o.total_amount)} · <b>${LABEL.orderStatus[o.status] || o.status}</b></p>
+      <p>${won(o.total_amount)} · <b>${LABEL.orderStatus[normStatus(o.status)] || o.status}</b></p>
       <a class="btn btn-small" href="order-detail.jsp?order_id=${encodeURIComponent(o.order_id)}">주문 상세</a>
     </li>`).join('') : '<li class="empty">주문 내역이 없습니다.</li>';
 

@@ -182,3 +182,9 @@ main .narrow { margin-left: auto; margin-right: auto; }
 #inquiry-list { margin-top: 20px; }
 .form div > input:not([type="radio"]):not([type="checkbox"]),
 .form div > textarea { width: 100%; }
+
+/* 주문 상세 — 상품별 상태 + 상품별 신청 버튼 */
+#order-detail .order-items li { grid-template-columns: 1fr 70px 50px 100px 200px; }
+#order-detail .order-items li .badge { justify-self: center; margin-right: 0; }
+.item-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.check.is-disabled { opacity: .45; }

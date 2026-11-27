@@ -114,7 +114,8 @@ function assertOk(res, failMessage) {
 
 // ---------- 코드값 → 한글 라벨 ----------
 const LABEL = {
-  orderStatus: { PAID: '결제완료', SHIPPING: '배송중', DELIVERED: '배송완료', CANCELED: '취소' },
+  // WAITING: 취소·반품·교환 신청만 들어가고 아직 처리 안 된 상품 (11/27 협의, order_item.status)
+  orderStatus: { PAID: '결제완료', SHIPPING: '배송중', DELIVERED: '배송완료', CANCELED: '취소', WAITING: '신청 처리중' },
   payment: { CARD: '신용카드', BANK_TRANSFER: '계좌이체', VIRTUAL_ACCOUNT: '가상계좌' },
   storage: { ROOM: '상온', COLD: '냉장', FROZEN: '냉동' },
   listType: { BEST: '베스트', NEW: '신상품', SALE: '알뜰쇼핑', BENEFIT: '특가/혜택', CATEGORY: '카테고리' },
@@ -127,6 +128,14 @@ const LABEL = {
   inquiryCategory: { ORDER: '주문/결제', DELIVERY: '배송', CANCEL: '취소/교환/반품', MEMBER: '회원', ETC: '기타' },
   gender: { MALE: '남자', FEMALE: '여자', NONE: '선택안함' },
 };
+
+// 상품(주문상품) 상태별로 신청할 수 있는 취소·반품·교환 종류 (order.js, claim.js 공용)
+//   결제완료 → 취소 / 배송완료 → 반품·교환 / 배송중·취소 → 신청 불가
+// ※ 화면에서만 거르는 규칙. 서버가 같은 검사를 하는지는 진단 대상
+//   신청 처리중(WAITING) → 다시 신청 불가
+const CLAIMABLE = { PAID: ['CANCEL'], DELIVERED: ['RETURN', 'EXCHANGE'] };
+// 상태값 대소문자 통일 (백엔드가 'waiting'처럼 소문자로 줘도 같은 상태로 처리)
+const normStatus = (s) => (s ? String(s).toUpperCase() : s);
 
 // U-27 카테고리 목록 API가 실패하거나 비어 있을 때 쓰는 기본값 (추후 DB 연결)
 const CATEGORIES = [
