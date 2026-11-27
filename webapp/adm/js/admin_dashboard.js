@@ -24,6 +24,9 @@ const OPTION_LABELS = {
     CANCELED: "취소",
     AMOUNT: "금액 할인",
     PERCENT: "비율 할인",
+    AVAILABLE: "사용 가능",
+    USED: "사용 완료",
+    EXPIRED: "기간 만료",
     NOTICE: "공지사항",
     FAQ: "자주 묻는 질문",
     MEMBER: "회원",
@@ -215,6 +218,11 @@ const menus = {
         ], true)
     ],
     coupons: [
+        action("쿠폰 목록 조회", "GET", "/coupons", [
+            number("page", "페이지", { ...optional, min: 1, defaultValue: 1 }),
+            field("date_from", "시작일", { ...optional, type: "date" }),
+            field("date_to", "종료일", { ...optional, type: "date" })
+    ], true),
         action("쿠폰 생성", "POST", "/coupons", [
             field("coupon_name", "쿠폰명", { maxLength: 30 }),
             choice("discount_type", "할인 방식", "AMOUNT PERCENT"),
@@ -236,6 +244,9 @@ const menus = {
         ], true)
     ],
     inquiries: [
+        action("1:1 문의 목록 조회", "GET", "/inquiries", [
+            number("page", "페이지", { ...optional, min: 1, defaultValue: 1 })
+        ], true),
         action("문의 답변 등록", "POST", "/inquiries/{inquiryId}/answer", [
             id("inquiryId", "문의 ID"),
             field("answer", "답변 내용", {
@@ -324,6 +335,28 @@ const LIST_VIEWS = {
             ["상태", "status", "withdrawalStatus"],
             ["신청일", "requested_at"],
             ["처리일", "processed_at"]
+        ]
+    },
+    "/coupons": {
+        key: "coupons",
+        columns: [
+            ["쿠폰 ID", "coupon_id"],
+            ["쿠폰명", "coupon_name"],
+            ["할인 방식", "discount_type", "status"],
+            ["할인 값", "discount_value"],
+            ["상태", "status", "status"],
+            ["사용 종료일", "valid_to"]
+        ]
+    },
+    "/inquiries": {
+        key: "inquiries",
+        columns: [
+            ["문의 ID", "inquiry_id"],
+            ["회원 ID", "user_id"],
+            ["분류", "category", "status"],
+            ["제목", "title"],
+            ["답변 상태", "is_answered", "answerStatus"],
+            ["작성일", "created_at"]
         ]
     }
 };
@@ -536,6 +569,12 @@ function formatListValue(value, kind) {
     if (value === null || value === undefined || value === "") {
         return "—";
     }
+    if (kind === "answerStatus") {
+        return value === true || value === "true" ? "답변 완료" : "답변 대기";
+    }
+    if (kind === "attachment") {
+        return value === true || value === "true" ? "첨부파일 있음" : "없음";
+    }
     if (kind === "status") {
         return OPTION_LABELS[value] ?? String(value);
     }
@@ -616,6 +655,78 @@ function orderCategories(items) {
     return ordered;
 }
 
+function showRecordDetail(item, path) {
+    listResults.querySelector(".admin-record-detail")?.remove();
+
+    const detail = document.createElement("section");
+    detail.className = "admin-record-detail";
+    const heading = document.createElement("h4");
+    heading.textContent = path === "/coupons"
+        ? `쿠폰 상세 · ${item.coupon_id ?? ""}`
+        : `문의 상세 · ${item.inquiry_id ?? ""}`;
+    detail.append(heading);
+
+    const columns = path === "/coupons" ? [
+        ["쿠폰 ID", "coupon_id"],
+        ["쿠폰명", "coupon_name"],
+        ["할인 방식", "discount_type", "status"],
+        ["할인 값", "discount_value"],
+        ["최소 주문 금액", "min_order_amount", "money"],
+        ["사용 시작일", "valid_from"],
+        ["사용 종료일", "valid_to"],
+        ["상태", "status", "status"]
+    ] : [
+        ["문의 ID", "inquiry_id"],
+        ["회원 ID", "user_id"],
+        ["분류", "category", "status"],
+        ["주문 ID", "order_id"],
+        ["제목", "title"],
+        ["내용", "content"],
+        ["답변 상태", "is_answered", "answerStatus"],
+        ["답변", "answer"],
+        ["답변일", "answered_at"],
+        ["첨부파일", "has_attachment", "attachment"],
+        ["작성일", "created_at"]
+    ];
+
+    const table = document.createElement("table");
+    const tbody = document.createElement("tbody");
+    for (const [label, key, kind] of columns) {
+        const row = document.createElement("tr");
+        const nameCell = document.createElement("th");
+        nameCell.scope = "row";
+        nameCell.textContent = label;
+        const valueCell = document.createElement("td");
+        valueCell.textContent = formatListValue(item[key], kind);
+        valueCell.style.whiteSpace = "pre-wrap";
+        row.append(nameCell, valueCell);
+        tbody.append(row);
+    }
+    table.append(tbody);
+    detail.append(table);
+
+    const actions = document.createElement("div");
+    actions.className = "admin-detail-actions";
+    if (path === "/inquiries" && item.is_answered !== true) {
+        const answerButton = document.createElement("button");
+        answerButton.type = "button";
+        answerButton.textContent = "답변 등록하기";
+        answerButton.addEventListener("click", function () {
+            chooseAction("문의 답변 등록", { inquiryId: item.inquiry_id });
+        });
+        actions.append(answerButton);
+    }
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.textContent = "상세 닫기";
+    closeButton.addEventListener("click", function () {
+        detail.remove();
+    });
+    actions.append(closeButton);
+    detail.append(actions);
+    listResults.append(detail);
+}
+
 function renderListResults(result, requestedAction) {
     const view = LIST_VIEWS[requestedAction.path];
     const items = view && result?.[view.key];
@@ -637,7 +748,8 @@ function renderListResults(result, requestedAction) {
         });
         listResults.append(addButton);
     }
-    const hasRowAction = ["/api/categories", "/products"].includes(requestedAction.path);
+    const hasRowAction = ["/api/categories", "/products", "/coupons", "/inquiries"]
+        .includes(requestedAction.path);
 
     if (items.length === 0) {
         const empty = document.createElement("p");
@@ -686,7 +798,7 @@ function renderListResults(result, requestedAction) {
                 button.className = "admin-list-action";
                 button.textContent = requestedAction.path === "/api/categories"
                     ? "수정"
-                    : "상세";
+                    : requestedAction.path === "/inquiries" ? "문의 보기" : "상세보기";
                 button.addEventListener("click", function () {
                     if (requestedAction.path === "/api/categories") {
                         chooseAction("카테고리 수정", {
@@ -694,6 +806,8 @@ function renderListResults(result, requestedAction) {
                             name: item.name,
                             parent_id: item.parent_id
                         });
+                    } else if (["/coupons", "/inquiries"].includes(requestedAction.path)) {
+                        showRecordDetail(item, requestedAction.path);
                     } else {
                         chooseAction("상품 상세 조회", { productId: item.product_id });
                         sendButton.click();
@@ -895,6 +1009,11 @@ function buildRequest() {
     }
 
     if (selectedAction.method === "GET") {
+        if (selectedAction.path === "/coupons") {
+            for (const name of ["date_from", "date_to"]) {
+                if (data[name]) data[name] += " 00:00:00";
+            }
+        }
         const query = new URLSearchParams(data).toString();
 
         return {

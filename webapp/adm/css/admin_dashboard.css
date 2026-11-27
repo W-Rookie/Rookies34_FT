@@ -225,6 +225,27 @@
     margin-top: 16px;
 }
 
+.admin-record-detail {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #dfe2e7;
+}
+
+.admin-record-detail h4 { margin: 0 0 12px; font-size: 16px; }
+.admin-record-detail table { white-space: normal; }
+.admin-record-detail th { width: 170px; }
+.admin-record-detail td { overflow-wrap: anywhere; }
+
+.admin-record-detail .admin-detail-actions button:first-child:not(:last-child) {
+    border-color: #663399;
+    background: #663399;
+    color: #fff;
+}
+
+.admin-record-detail .admin-detail-actions button:first-child:not(:last-child):hover {
+    background: #53287f;
+}
+
 #admin-list-results .admin-product-action {
     min-height: 40px;
     padding: 8px 16px;
