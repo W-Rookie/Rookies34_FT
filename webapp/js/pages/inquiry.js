@@ -37,7 +37,7 @@ async function showDetail() {
       <p class="post-date">${res.created_at}</p>
       <div class="post-body">${res.content}</div>
       ${res.attachment ? `<p>첨부파일: <a href="${res.attachment}" target="_blank">${res.attachment.split('/').pop()}</a></p>` : ''}
-      <div class="answer">${res.answer ? `<b>답변</b><div class="pre-wrap">${res.answer}</div>` : '아직 답변이 등록되지 않았습니다.'}</div>
+      <div class="answer">${res.answer ? `<b>관리자</b><div class="pre-wrap">${res.answer}</div>` : '아직 답변이 등록되지 않았습니다.'}</div>
       <a class="btn" href="inquiry.jsp">목록</a>
     </div>`;
 }
