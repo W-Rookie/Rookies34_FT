@@ -1,4 +1,3 @@
-
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ include file="include/header.jsp" %>
 
@@ -30,7 +29,6 @@
       name="category_id"
       min="1"
       required>
-    <small>카테고리 목록 API가 없어 ID 직접 입력 (예: 907)</small>
   </div>
 
   <!-- 3. 판매가 -->
@@ -105,7 +103,8 @@
       id="thumbnail"
       name="thumbnail"
       accept=".jpg,.jpeg,.png">
-    <small>jpg / jpeg / png, 최대 5MB (상품 수정 시 기존 이미지 유지 가능)</small>
+
+    <small>jpg / jpeg / png, 최대 5MB</small>
 
     <!-- 상품 수정 시 기존 대표 이미지 미리보기 -->
     <div id="currentThumb"></div>
@@ -120,7 +119,11 @@
       name="detail_images"
       accept=".jpg,.jpeg,.png"
       multiple>
+
     <small>최대 10장, 파일당 5MB 이하</small>
+
+    <!-- 상품 수정 시 기존 상세 이미지 미리보기 -->
+    <div id="currentDetailImages"></div>
   </div>
 
   <!-- 11. 등록·수정 버튼 -->
@@ -131,7 +134,7 @@
 <!-- 등록·수정 오류 안내 -->
 <p id="formMsg" class="msg"></p>
 
-<!-- 실제 API 연동: 샘플 데이터 스크립트 제거 -->
-<script src="resources/js/seller/productForm.js?v=edit-prefill-3"></script>
+<!-- 실제 API 연동 -->
+<script src="resources/js/seller/productForm.js?v=20261128-1"></script>
 
 <%@ include file="include/footer.jsp" %>

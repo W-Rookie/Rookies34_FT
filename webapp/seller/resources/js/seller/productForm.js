@@ -1,28 +1,16 @@
 /**
  * productForm.js - 판매자 상품 등록·수정 (S-02)
  *
- * 등록:
- * POST /api/seller/products
- *
- * 수정:
- * PUT /api/seller/products/{productId}
- *
  * 기존 상품 조회:
  * GET /api/products/{productId}
  *
- * 보조 조회:
- * GET /api/seller/products?page=1
+ * 상품 등록:
+ * POST /api/seller/products
  *
- * 기능:
- * 1. 신규 상품 등록
- * 2. 기존 상품 정보 자동 입력
- * 3. 상품명, 카테고리, 가격, 재고 등 기존 정보 표시
- * 4. 포장 타입, 원산지, 설명 자동 입력
- * 5. 대표 이미지 미리보기
- * 6. 이미지 미변경 시 기존 이미지 유지
- * 7. 실제 API 연동
+ * 상품 수정:
+ * PUT /api/seller/products/{productId}
  *
- * 더미데이터 사용하지 않음
+ * 실제 API 사용 / 더미데이터 미사용
  */
 
 (function () {
@@ -32,9 +20,7 @@
   // 1. 기본 설정
   // =====================================
 
-  const $ = function (id) {
-    return document.getElementById(id);
-  };
+  const $ = (id) => document.getElementById(id);
 
   const form = $("productForm");
   const submitBtn = $("submitBtn");
@@ -45,23 +31,18 @@
   const ALLOWED_EXT = ["jpg", "jpeg", "png"];
   const MAX_DETAIL = 10;
 
-  const SELLER_PAGE_SIZE = 20;
-  const MAX_SELLER_PAGES = 100;
-
   const params = new URLSearchParams(location.search);
-
   const productId = params.get("id");
 
   const isEdit =
     productId !== null &&
     productId !== "";
 
-  // 수정 모드일 때는 기존 정보 조회 후 저장 허용
   let productLoaded = !isEdit;
   let submitting = false;
 
   // =====================================
-  // 2. 메시지 출력
+  // 2. 메시지 처리
   // =====================================
 
   function showError(text) {
@@ -85,268 +66,103 @@
 
   function populateFields(product) {
 
-    // 입력칸과 API 필드명 연결
-    const fields = [
-      "name",
-      "category_id",
-      "price",
-      "discount_rate",
-      "stock",
-      "storage_type",
-      "origin",
-      "description"
-    ];
+    // 상품명
+    $("name").value =
+      product.name ?? "";
 
-    fields.forEach(function (field) {
+    // 카테고리 ID
+    $("category_id").value =
+      product.category_id ?? "";
 
-      const input = $(field);
+    // 판매가
+    $("price").value =
+      product.price ?? "";
 
-      if (!input) {
-        return;
-      }
+    // 할인율
+    $("discount_rate").value =
+      product.discount_rate ?? 0;
 
-      // 0도 정상적인 값으로 처리
-      if (
-        product[field] !== undefined &&
-        product[field] !== null
-      ) {
-        input.value = String(product[field]);
-      }
+    // 재고
+    $("stock").value =
+      product.stock ?? "";
 
-    });
+    // 포장 타입
+    $("storage_type").value =
+      product.storage_type ?? "";
+
+    // 원산지
+    $("origin").value =
+      product.origin ?? "";
+
+    // 상품 설명
+    $("description").value =
+      product.description ?? "";
 
     // =====================================
-    // 기존 대표 이미지 미리보기
+    // 대표 이미지 미리보기
     // =====================================
 
     const currentThumb = $("currentThumb");
 
     if (currentThumb) {
-
       currentThumb.replaceChildren();
 
       const thumbnail =
         product.thumbnail ||
         product.thumbnail_url;
 
-      if (
-        thumbnail &&
-        typeof thumbnail === "string"
-      ) {
+      if (thumbnail) {
+        const img = document.createElement("img");
 
-        const image = document.createElement("img");
+        img.src = thumbnail;
+        img.alt = "대표 이미지";
+        img.width = 120;
 
-        image.src = thumbnail;
-        image.alt = "현재 대표 이미지";
-        image.width = 120;
+        img.style.maxWidth = "120px";
+        img.style.height = "auto";
+        img.style.marginTop = "10px";
 
-        image.style.maxWidth = "120px";
-        image.style.height = "auto";
-        image.style.marginTop = "10px";
-
-        currentThumb.appendChild(image);
-
+        currentThumb.appendChild(img);
       }
     }
 
     // =====================================
-    // 기존 상세 이미지 표시
+    // 상세 이미지 미리보기
     // =====================================
 
-    // JSP에 currentDetailImages 영역이 있을 때만 표시
-    const currentDetails = $("currentDetailImages");
+    const currentDetails =
+      $("currentDetailImages");
 
     if (currentDetails) {
-
       currentDetails.replaceChildren();
 
-      if (Array.isArray(product.detail_images)) {
+      const images = Array.isArray(product.detail_images)
+        ? product.detail_images
+        : [];
 
-        product.detail_images.forEach(function (url) {
+      images.forEach(function (url) {
 
-          if (
-            !url ||
-            typeof url !== "string"
-          ) {
-            return;
-          }
-
-          const image = document.createElement("img");
-
-          image.src = url;
-          image.alt = "기존 상세 이미지";
-          image.width = 100;
-
-          image.style.maxWidth = "100px";
-          image.style.margin = "5px";
-
-          currentDetails.appendChild(image);
-
-        });
-
-      }
-    }
-  }
-
-  // =====================================
-  // 4. 필수 정보 누락 확인
-  // =====================================
-
-  function getMissingFields() {
-
-    const required = [
-      ["name", "상품명"],
-      ["category_id", "카테고리 ID"],
-      ["price", "판매가"],
-      ["stock", "재고"],
-      ["storage_type", "포장 타입"],
-      ["origin", "원산지"],
-      ["description", "상품 설명"]
-    ];
-
-    return required
-      .filter(function (item) {
-
-        const input = $(item[0]);
-
-        return (
-          !input ||
-          input.value.trim() === ""
-        );
-
-      })
-      .map(function (item) {
-        return item[1];
-      });
-
-  }
-
-  // =====================================
-  // 5. 일반 상품 상세 조회
-  // =====================================
-
-  async function fetchProductDetail(id) {
-
-    const result = await api.get(
-      "/products/" + encodeURIComponent(id)
-    );
-
-    if (
-      !result ||
-      result.code !== "ok"
-    ) {
-      throw new Error(
-        "상품 상세 조회 API 응답 오류"
-      );
-    }
-
-    // 백엔드 응답 구조 두 가지 모두 지원
-    //
-    // 형태 1:
-    // { code: "ok", product: { ... } }
-    //
-    // 형태 2:
-    // { code: "ok", product_id: ..., name: ... }
-
-    const product = result.product || result;
-
-    if (
-      !product ||
-      typeof product !== "object" ||
-      !product.name
-    ) {
-      throw new Error(
-        "상품 상세 정보가 없습니다."
-      );
-    }
-
-    // 다른 상품 정보가 반환되는 경우 방지
-    if (
-      product.product_id !== undefined &&
-      product.product_id !== null &&
-      String(product.product_id) !== String(id)
-    ) {
-      throw new Error(
-        "조회된 상품 ID가 일치하지 않습니다."
-      );
-    }
-
-    return product;
-  }
-
-  // =====================================
-  // 6. 판매자 상품 목록에서 해당 상품 찾기
-  // =====================================
-
-  async function fetchSellerProduct(id) {
-
-    let previousFirstId = null;
-
-    for (
-      let page = 1;
-      page <= MAX_SELLER_PAGES;
-      page++
-    ) {
-
-      const result = await api.get(
-        "/seller/products",
-        {
-          page: page
+        if (!url || typeof url !== "string") {
+          return;
         }
-      );
 
-      if (
-        !result ||
-        result.code !== "ok" ||
-        !Array.isArray(result.products)
-      ) {
-        throw new Error(
-          "판매자 상품 목록 API 응답 오류"
-        );
-      }
+        const img = document.createElement("img");
 
-      const products = result.products;
+        img.src = url;
+        img.alt = "상세 이미지";
+        img.width = 100;
 
-      // 현재 상품 ID 검색
-      const found = products.find(function (product) {
-        return (
-          String(product.product_id) === String(id)
-        );
+        img.style.maxWidth = "100px";
+        img.style.height = "auto";
+        img.style.margin = "5px";
+
+        currentDetails.appendChild(img);
       });
-
-      if (found) {
-        return found;
-      }
-
-      // 동일한 페이지가 반복 반환되는 경우 방지
-      const firstId = products.length
-        ? String(products[0].product_id)
-        : null;
-
-      if (
-        firstId !== null &&
-        firstId === previousFirstId
-      ) {
-        throw new Error(
-          "판매자 상품 목록의 페이지 이동이 정상적으로 동작하지 않습니다."
-        );
-      }
-
-      previousFirstId = firstId;
-
-      // 마지막 페이지
-      if (products.length < SELLER_PAGE_SIZE) {
-        break;
-      }
     }
-
-    throw new Error(
-      "판매자 상품 목록에서 해당 상품을 찾지 못했습니다."
-    );
   }
 
   // =====================================
-  // 7. 기존 상품 정보 불러오기
+  // 4. 기존 상품 정보 조회
   // =====================================
 
   async function loadProduct(id) {
@@ -355,177 +171,110 @@
     submitBtn.disabled = true;
 
     clearError();
-
-    showNotice(
-      "기존 상품 정보를 불러오는 중입니다."
-    );
-
-    let detail = null;
-    let summary = null;
+    showNotice("상품 정보를 불러오는 중입니다.");
 
     try {
 
-      // =====================================
-      // ① 일반 상품 상세 API 먼저 조회
-      // =====================================
+      // 일반 상품 상세 조회 API
+      const result = await api.get(
+        "/products/" + encodeURIComponent(id)
+      );
 
-      try {
-
-        detail = await fetchProductDetail(id);
-
-      } catch (detailError) {
-
-        if (
-          detailError.message === "UNAUTHORIZED"
-        ) {
-          throw detailError;
-        }
-
-        console.warn(
-          "상품 상세 조회 실패:",
-          detailError
+      // API 응답 검증
+      if (
+        !result ||
+        result.code !== "ok"
+      ) {
+        throw new Error(
+          "상품 상세 조회에 실패했습니다."
         );
+      }
 
+      // 최신 규격서에서는 최상위에 필드가 존재함.
+      // 중첩 응답도 호환되도록 처리.
+      const product = result.product || result;
+
+      if (
+        !product ||
+        !product.name
+      ) {
+        throw new Error(
+          "상품 상세 정보가 없습니다."
+        );
+      }
+
+      // 상품 ID 일치 여부 확인
+      if (
+        product.product_id !== undefined &&
+        product.product_id !== null &&
+        String(product.product_id) !== String(id)
+      ) {
+        throw new Error(
+          "조회된 상품 ID가 일치하지 않습니다."
+        );
       }
 
       // =====================================
-      // ② 상세 조회 실패 또는 필드 누락 시
-      //    판매자 목록 API로 보완
+      // 기존 상품 정보 자동 입력
       // =====================================
 
-      const detailFields = [
+      populateFields(product);
+
+      // 필수 정보 누락 확인
+      const requiredFields = [
         "name",
         "category_id",
         "price",
-        "discount_rate",
         "stock",
         "storage_type",
         "origin",
         "description"
       ];
 
-      const needSummary =
-        !detail ||
-        detailFields.some(function (field) {
-          return (
-            detail[field] === undefined ||
-            detail[field] === null
-          );
-        });
-
-      if (needSummary) {
-
-        try {
-
-          summary = await fetchSellerProduct(id);
-
-        } catch (summaryError) {
-
-          if (
-            summaryError.message === "UNAUTHORIZED"
-          ) {
-            throw summaryError;
-          }
-
-          console.warn(
-            "판매자 상품 목록 조회 실패:",
-            summaryError
-          );
-
-        }
-
-      }
-
-      // =====================================
-      // ③ 두 API 모두 실패한 경우
-      // =====================================
-
-      if (!detail && !summary) {
-
-        throw new Error(
-          "기존 상품 정보를 조회할 수 없습니다."
-        );
-
-      }
-
-      // =====================================
-      // ④ 정보 병합
-      // =====================================
-
-      // 판매자 목록 정보를 먼저 넣고,
-      // 상세 API 정보를 우선 적용
-      const product = Object.assign(
-        {},
-        summary || {},
-        detail || {}
-      );
-
-      // =====================================
-      // ⑤ 입력칸에 기존 정보 자동 입력
-      // =====================================
-
-      populateFields(product);
-
-      productLoaded = true;
-
-      // =====================================
-      // ⑥ 누락된 정보 확인
-      // =====================================
-
-      const missing = getMissingFields();
+      const missing = requiredFields.filter(function (field) {
+        const input = $(field);
+        return !input || input.value.trim() === "";
+      });
 
       if (missing.length > 0) {
-
-        showNotice(
-          "기존 상품의 일부 정보가 조회되지 않았습니다. " +
-          "다음 항목을 확인하고 입력해 주세요: " +
-          missing.join(", ") + "."
+        throw new Error(
+          "상품 정보 중 일부 항목이 누락되었습니다: " +
+          missing.join(", ")
         );
-
-      } else {
-
-        showNotice(
-          "기존 상품 정보를 불러왔습니다. " +
-          "내용을 수정한 후 저장해 주세요. " +
-          "이미지를 새로 첨부하지 않으면 기존 이미지가 유지됩니다."
-        );
-
       }
 
-      // 조회 성공 후 수정 버튼 활성화
+      // 정상 조회 완료
+      productLoaded = true;
       submitBtn.disabled = false;
+
+      // 불필요한 안내 문구 표시하지 않음
+      showNotice("");
 
     } catch (err) {
 
       productLoaded = false;
-
       submitBtn.disabled = true;
 
-      if (
-        err.message === "UNAUTHORIZED"
-      ) {
+      if (err.message === "UNAUTHORIZED") {
         return;
       }
 
       console.error(
-        "기존 상품 조회 오류:",
+        "상품 정보 조회 실패:",
         err
       );
 
-      showNotice(
-        "상품 정보를 불러오지 못했습니다. " +
-        "상품 목록에서 다시 선택해 주세요."
-      );
+      showNotice("");
 
       showError(
-        err.message || "상품 조회 실패"
+        err.message ||
+        "기존 상품 정보를 불러오지 못했습니다."
       );
-
     }
   }
 
   // =====================================
-  // 8. 이미지 파일 검증
+  // 5. 이미지 파일 검증
   // =====================================
 
   function checkFile(file) {
@@ -536,51 +285,39 @@
       .toLowerCase();
 
     if (!ALLOWED_EXT.includes(ext)) {
-
       return (
         file.name +
         ": jpg, jpeg, png 파일만 가능합니다."
       );
-
     }
 
     if (file.size > MAX_FILE_SIZE) {
-
       return (
         file.name +
         ": 5MB 이하만 가능합니다."
       );
-
     }
 
     return null;
   }
 
   // =====================================
-  // 9. 입력값 검증
+  // 6. 입력값 검증
   // =====================================
 
   function validate() {
 
-    const v = function (id) {
-      return $(id).value.trim();
-    };
+    const v = (id) => $(id).value.trim();
 
-    const isInt = function (value) {
-      return /^[0-9]+$/.test(value);
-    };
+    const isInt = (value) =>
+      /^[0-9]+$/.test(value);
 
-    // 기존 정보 조회 여부
+    // 수정 모드 기존 정보 확인
     if (isEdit && !productLoaded) {
-      return (
-        "기존 상품 정보를 불러오지 못해 수정할 수 없습니다."
-      );
+      return "상품 정보를 불러오지 못했습니다.";
     }
 
-    // =====================================
     // 상품명
-    // =====================================
-
     if (
       !v("name") ||
       v("name").length > 100
@@ -588,34 +325,23 @@
       return "상품명은 1~100자입니다.";
     }
 
-    // =====================================
-    // 카테고리
-    // =====================================
-
+    // 카테고리 ID
     if (
       !isInt(v("category_id")) ||
       Number(v("category_id")) < 1
     ) {
-      return (
-        "카테고리 ID는 1 이상의 숫자로 입력해 주세요."
-      );
+      return "카테고리 ID를 확인해 주세요.";
     }
 
-    // =====================================
     // 판매가
-    // =====================================
-
     if (
       !isInt(v("price")) ||
       Number(v("price")) < 100
     ) {
-      return "판매가는 100원 이상 정수입니다.";
+      return "판매가는 100원 이상이어야 합니다.";
     }
 
-    // =====================================
     // 할인율
-    // =====================================
-
     if (v("discount_rate") !== "") {
 
       if (
@@ -624,21 +350,14 @@
       ) {
         return "할인율은 0~90입니다.";
       }
-
     }
 
-    // =====================================
     // 재고
-    // =====================================
-
     if (!isInt(v("stock"))) {
       return "재고는 0 이상 정수입니다.";
     }
 
-    // =====================================
     // 포장 타입
-    // =====================================
-
     if (
       !["ROOM", "COLD", "FROZEN"].includes(
         v("storage_type")
@@ -647,18 +366,12 @@
       return "포장 타입을 선택해 주세요.";
     }
 
-    // =====================================
     // 원산지
-    // =====================================
-
     if (!v("origin")) {
       return "원산지를 입력해 주세요.";
     }
 
-    // =====================================
     // 상품 설명
-    // =====================================
-
     if (!v("description")) {
       return "상품 설명을 입력해 주세요.";
     }
@@ -669,21 +382,17 @@
 
     const thumbnail = $("thumbnail").files[0];
 
-    // 신규 등록 시 대표 이미지 필수
+    // 신규 등록에서만 필수
     if (!thumbnail && !isEdit) {
-
       return "대표 이미지를 첨부해 주세요.";
-
     }
 
     if (thumbnail) {
-
       const error = checkFile(thumbnail);
 
       if (error) {
         return error;
       }
-
     }
 
     // =====================================
@@ -696,21 +405,19 @@
       return "상세 이미지는 최대 10장입니다.";
     }
 
-    for (let i = 0; i < details.length; i++) {
-
-      const error = checkFile(details[i]);
+    for (const file of details) {
+      const error = checkFile(file);
 
       if (error) {
         return error;
       }
-
     }
 
     return null;
   }
 
   // =====================================
-  // 10. 상품 등록·수정 API
+  // 7. 상품 등록·수정 API
   // =====================================
 
   form.addEventListener(
@@ -718,7 +425,6 @@
     async function (e) {
 
       e.preventDefault();
-
       clearError();
 
       // 중복 제출 방지
@@ -729,19 +435,15 @@
         return;
       }
 
+      // 입력값 검증
       const error = validate();
 
       if (error) {
-
         showError(error);
         return;
-
       }
 
-      // =====================================
       // multipart/form-data 생성
-      // =====================================
-
       const fd = new FormData(form);
 
       // 텍스트 공백 제거
@@ -760,31 +462,28 @@
         $("description").value.trim()
       );
 
-      // 할인율이 비어 있으면 0으로 처리
+      // 할인율
       if (
         $("discount_rate").value.trim() === ""
       ) {
         fd.delete("discount_rate");
       }
 
-      // 새로운 상세 이미지가 없으면
-      // 기존 상세 이미지 유지
-      if (
-        $("detail_images").files.length === 0
-      ) {
-        fd.delete("detail_images");
-      }
-
-      // 새로운 대표 이미지가 없으면
-      // 기존 대표 이미지 유지
+      // 새로 선택한 대표 이미지가 없으면 파일 파트 생략
       if (
         $("thumbnail").files.length === 0
       ) {
         fd.delete("thumbnail");
       }
 
-      submitting = true;
+      // 새로 선택한 상세 이미지가 없으면 파일 파트 생략
+      if (
+        $("detail_images").files.length === 0
+      ) {
+        fd.delete("detail_images");
+      }
 
+      submitting = true;
       submitBtn.disabled = true;
 
       try {
@@ -792,7 +491,7 @@
         let result;
 
         // =====================================
-        // 상품 수정 (PUT)
+        // 기존 상품 수정
         // =====================================
 
         if (isEdit) {
@@ -807,7 +506,7 @@
         } else {
 
           // =====================================
-          // 상품 등록 (POST)
+          // 신규 상품 등록
           // =====================================
 
           result = await api.upload(
@@ -818,41 +517,30 @@
 
         }
 
-        // =====================================
-        // API 성공 여부 확인
-        // =====================================
-
+        // API 성공 확인
         if (
           !result ||
           result.code !== "ok"
         ) {
-
           throw new Error(
             "상품 저장 API 응답 오류"
           );
-
         }
 
         // =====================================
-        // 정상 처리
+        // 성공 처리
         // =====================================
 
         if (isEdit) {
-
-          alert(
-            "상품이 수정되었습니다."
-          );
-
+          alert("상품이 수정되었습니다.");
         } else {
-
           alert(
             "상품이 등록되었습니다.\n" +
             "관리자 검증 후 판매가 시작됩니다."
           );
-
         }
 
-        // 상품 목록으로 이동
+        // 상품 관리 페이지로 이동
         location.href = "products.jsp";
 
       } catch (err) {
@@ -860,9 +548,8 @@
         if (
           err.message !== "UNAUTHORIZED"
         ) {
-
           console.error(
-            "상품 저장 오류:",
+            "상품 저장 실패:",
             err
           );
 
@@ -871,46 +558,33 @@
               ? "상품 수정에 실패했습니다."
               : "상품 등록에 실패했습니다."
           );
-
         }
 
       } finally {
 
         submitting = false;
-
         submitBtn.disabled =
           isEdit && !productLoaded;
 
       }
-
     }
   );
 
   // =====================================
-  // 11. 수정 모드 초기화
+  // 8. 수정 모드 초기화
   // =====================================
 
   if (isEdit) {
 
     $("pageTitle").textContent = "상품 수정";
-
     submitBtn.textContent = "수정";
-
     submitBtn.disabled = true;
 
-    // 상품 ID 검증
     if (!/^[1-9][0-9]*$/.test(productId)) {
 
-      showNotice(
-        "잘못된 상품 ID입니다. " +
-        "상품 목록에서 다시 선택해 주세요."
-      );
+      showError("잘못된 상품 ID입니다.");
 
     } else {
-
-      showNotice(
-        "기존 상품 정보를 불러오는 중입니다."
-      );
 
       // 기존 상품 정보 조회
       loadProduct(productId);
@@ -919,9 +593,8 @@
 
   } else {
 
-    // 신규 상품 등록
+    // 신규 등록 모드
     $("pageTitle").textContent = "상품 등록";
-
     submitBtn.textContent = "등록";
 
   }
