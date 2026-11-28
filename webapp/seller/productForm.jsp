@@ -132,6 +132,6 @@
 <p id="formMsg" class="msg"></p>
 
 <!-- 실제 API 연동: 샘플 데이터 스크립트 제거 -->
-<script src="resources/js/seller/productForm.js?v=real-api-2"></script>
+<script src="resources/js/seller/productForm.js?v=edit-prefill-3"></script>
 
 <%@ include file="include/footer.jsp" %>
